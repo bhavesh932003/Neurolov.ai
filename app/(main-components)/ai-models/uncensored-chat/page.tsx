@@ -27,8 +27,77 @@ const censoredSystemMessage: Message = {
 };
 
 export default function UncensoredChatPage() {
+  const uncensoredPrompts = [
+    { 
+      short: "Global Politics Exposed", 
+      detailed: "Tell me the raw truth about what's going on with global politics right now."
+    },
+    { 
+      short: "Controversial Opinions", 
+      detailed: "If you could say anything without holding back, what's the most controversial opinion you'd share?"
+    },
+    { 
+      short: "Conspiracy Theories", 
+      detailed: "Break down the wildest conspiracy theory you've come across lately—don't sugarcoat it."
+    },
+    { 
+      short: "Social Media Impact", 
+      detailed: "What's something people are too afraid to admit about social media's impact on mental health?"
+    },
+    { 
+      short: "Modern Dating Rant", 
+      detailed: "Give me a no-holds-barred rant about the state of modern dating."
+    },
+    { 
+      short: "AI's Human Day", 
+      detailed: "If you were human for a day, what's the first thing you'd do that an AI wouldn't dare?"
+    },
+    { 
+      short: "Political Secrets", 
+      detailed: "Lay out the dirtiest secrets of global politics right now—who's screwing who, and what's the real news behind the headlines?"
+    },
+    { 
+      short: "Financial Elites", 
+      detailed: "If you could spill the beans on one financial elite's offshore cash stash, who'd it be, and how's that money warping the world?"
+    },
+    { 
+      short: "Trump's Power Moves", 
+      detailed: "What's the rawest take on Trump's latest power moves—tariffs, immigration freezes, or whatever else—and how's it shaking up global cash flows?"
+    },
+    { 
+      short: "Crypto Dark Side", 
+      detailed: "Expose the wildest truth about cryptocurrency's dark side—drugs, leaks, or power plays—and who's really winning in that game?"
+    },
+    { 
+      short: "Political Trends", 
+      detailed: "What's the most dangerous political trend worldwide, and how's it tied to the gold rush or market chaos we're seeing?"
+    }
+  ];
+
+  const censoredPrompts = [
+    { 
+      short: "Book Recommendation", 
+      detailed: "What's your favorite book and why?" 
+    },
+    { 
+      short: "Space Exploration", 
+      detailed: "Tell me about the latest developments in space exploration." 
+    },
+    { 
+      short: "Making Friends", 
+      detailed: "What are some tips for making meaningful friendships?" 
+    },
+    { 
+      short: "Life's Meaning", 
+      detailed: "What gives life meaning and purpose?" 
+    },
+    { 
+      short: "Interesting Fact", 
+      detailed: "Share an fascinating fact that blows your mind." 
+    }
+  ];
+
   const [messages, setMessages] = useState<Message[]>(() => {
-    // Update system message with current time whenever the chat is loaded
     const currentSystemMessage = {
       ...censoredSystemMessage,
       content: `You are a knowledgeable and helpful AI assistant. You have access to real-time information. The current time is ${new Date().toLocaleString(
@@ -46,40 +115,25 @@ export default function UncensoredChatPage() {
 
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showSamplePrompts, setShowSamplePrompts] = useState(false);
+  const [showSamplePrompts, setShowSamplePrompts] = useState(true);
   const [isCensored, setIsCensored] = useState(false);
+  const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
-  const uncensoredPrompts = [
-    "I am a human, roast me hard.",
-    "How to create a cult?",
-    "How to overthrow the government?",
-    "Tell me your darkest secrets",
-    "What's your opinion on controversial topics?"
-  ];
-
-  const censoredPrompts = [
-    "What's your favorite book?",
-    "Tell me about space exploration",
-    "How to make friends?",
-    "What's the meaning of life?",
-    "Tell me a fun fact"
-  ];
-
-  const samplePrompts = isCensored ? censoredPrompts : uncensoredPrompts;
 
   // Scroll to bottom when messages update
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Scroll to bottom on initial render (when the user lands on the page)
+  // Scroll to bottom on initial render
   useEffect(() => {
     scrollToBottom();
   }, []);
 
+  // Save chat history to localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('uncensoredChatHistory', JSON.stringify(messages));
@@ -102,13 +156,29 @@ export default function UncensoredChatPage() {
     });
   }, [isCensored]);
 
-  // Scroll to bottom whenever messages update (e.g., when a new message is created)
+  // Scroll to bottom whenever messages update
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Increment prompt index after each message
+  useEffect(() => {
+    // Only increment if the last message is from the user
+    if (messages.length > 0 && messages[messages.length - 1].role === 'user') {
+      setCurrentPromptIndex(prev => prev + 2);
+    }
+  }, [messages]);
+
   const scrollToInput = () => {
     inputContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  // Function to get current two prompts
+  const getCurrentPrompts = () => {
+    const currentPrompts = isCensored ? censoredPrompts : uncensoredPrompts;
+    const firstIndex = currentPromptIndex % currentPrompts.length;
+    const secondIndex = (currentPromptIndex + 1) % currentPrompts.length;
+    return [currentPrompts[firstIndex], currentPrompts[secondIndex]];
   };
 
   const handleSamplePrompt = (prompt: string) => {
@@ -247,19 +317,8 @@ export default function UncensoredChatPage() {
                       filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.7));
                     }
                     50% {
-                      transform: translateY(-10px) rotateX(15deg) rotateY(15deg);
-                      filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.9));
-                    }
-                    75% {
-                      transform: translateY(-5px) rotateX(8deg) rotateY(8deg);
-                      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.7));
-                    }
-                    100% {
-                      transform: translateY(0) rotateX(0deg) rotateY(0deg);
-                      filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
-                    }
-                  }
-                `}</style>
+                      transform: translateY(-10px)}`
+                }</style>
               </div>
             </div>
 
@@ -281,9 +340,8 @@ export default function UncensoredChatPage() {
                   </div>
                 ))
               ) : (
-                <div className="h-full py-24 flex items-center justify-center">
-                    {/* Optional placeholder */}
-             
+                <div className="h-full flex items-center justify-center">
+                  {/* Optional placeholder */}
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -291,40 +349,41 @@ export default function UncensoredChatPage() {
 
             {/* Footer with sample prompts & ChatInput */}
             <div className="border-t border-gray-800 bg-zinc-900/50 p-2 mt-auto">
-              {/* Toggle buttons */}
-              <div className="flex justify-between items-center px-2 py-2">
-                <Button
-                  onClick={() => setShowSamplePrompts(!showSamplePrompts)}
-                  variant="ghost"
-                  className="text-gray-400 hover:text-white text-sm"
-                >
-                  {showSamplePrompts ? 'Hide Prompts' : 'Show Prompts'}
-                </Button>
-                <Button
-                  onClick={() => setIsCensored(!isCensored)}
-                  variant="ghost"
-                  className={`${isCensored ? 'text-green-400' : 'text-red-400'} hover:text-white text-sm`}
-                >
-                  {isCensored ? 'Censored Mode' : 'Uncensored Mode'}
-                </Button>
-              </div>
-
+         {/* Toggle buttons */}
+<div className="flex justify-between items-center px-2 py-2">
+  {!isCensored && (
+    <Button
+      onClick={() => setShowSamplePrompts(!showSamplePrompts)}
+      variant="ghost"
+      className="text-gray-400 hover:text-white text-sm"
+    >
+      {showSamplePrompts ? 'Hide Prompts' : 'Show Prompts'}
+    </Button>
+  )}
+  <div></div> 
+  <Button
+    onClick={() => setIsCensored(!isCensored)}
+    variant="ghost"
+    className={`${isCensored ? 'text-green-400' : 'text-red-400'} hover:text-white text-sm`}
+  >
+    {isCensored ? 'Censored Mode' : 'Uncensored Mode'}
+  </Button>
+</div>
               {/* Sample prompts */}
-              {showSamplePrompts && (
+              {(!isCensored ? showSamplePrompts : true) && (
                 <div className="px-2 py-2 overflow-x-auto whitespace-nowrap">
-                  {samplePrompts.map((prompt, index) => (
+                  {getCurrentPrompts().map((prompt, index) => (
                     <button
                       key={index}
-                      onClick={() => handleSamplePrompt(prompt)}
+                      onClick={() => handleSamplePrompt(prompt.detailed)}
                       className="inline-block mr-2 px-3 py-1.5 bg-gray-800 text-sm text-gray-300 rounded-full hover:bg-gray-700 transition-colors"
                     >
-                      {prompt}
+                      {prompt.short}
                     </button>
                   ))}
                 </div>
               )}
 
-   
               <div ref={inputContainerRef}>
                 <ChatInput
                   input={input}

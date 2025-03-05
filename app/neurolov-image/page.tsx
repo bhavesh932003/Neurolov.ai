@@ -46,52 +46,57 @@ export default function NeuroImageGenerator() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
 
-const chatContainerRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-useEffect(() => {
-  const scrollToBottom = () => {
-    if (chatContainerRef.current) {
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTo({
+          top: chatContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    };
+
+    const timeoutId = setTimeout(scrollToBottom, 150);
+    
+    return () => clearTimeout(timeoutId);
+  }, [chatHistory]);
+
+
+  useEffect(() => {
+    if (chatContainerRef.current && chatHistory.length > 0) {
       chatContainerRef.current.scrollTo({
         top: chatContainerRef.current.scrollHeight,
         behavior: 'smooth'
       });
     }
-  };
-
-  const timeoutId = setTimeout(scrollToBottom, 150);
-  
-  return () => clearTimeout(timeoutId);
-}, [chatHistory]);
+  }, []);
 
 
-useEffect(() => {
-  if (chatContainerRef.current && chatHistory.length > 0) {
-    chatContainerRef.current.scrollTo({
-      top: chatContainerRef.current.scrollHeight,
-      behavior: 'smooth'
-    });
-  }
-}, []);
-
-
-  // Sample prompts with short and detailed versions
+  // Updated sample prompts with new shorter (image names) and detailed descriptions
   const samplePrompts = [
-    { short: "Moonlit wolf with glowing eyes", detailed: "A majestic wolf standing on a rocky outcrop under a full moon, its eyes glowing with an ethereal blue light, surrounded by wisps of mist in a dark forest" },
-    { short: "AI assassin dodging lasers", detailed: "A cybernetic assassin in sleek black armor performing an acrobatic dodge through a grid of crimson laser beams, trailing digital distortion effects" },
-    { short: "Futuristic soldier in battle", detailed: "A heavily armored future soldier in adaptive camouflage engaging in combat amidst the ruins of a neon-lit cyberpunk city, energy weapons lighting up the scene" },
-    { short: "Glowing fox in dreamland", detailed: "A mystical fox with softly glowing fur wandering through a surreal dreamscape filled with floating crystals and bioluminescent flowers" },
-    { short: "Crystal dragon in flight", detailed: "A magnificent dragon with scales made of translucent crystal soaring through aurora-filled skies, its wings leaving trails of sparkling light" },
-    { short: "Steampunk city at dusk", detailed: "A sprawling Victorian steampunk city at sunset, brass airships docking at floating platforms, steam and gears visible throughout the architecture" },
-    { short: "Neon samurai meditation", detailed: "A cybernetic samurai meditating in a zen garden, surrounded by holographic cherry blossoms and neon signs reflecting in puddles" },
-    { short: "Ancient tech ruins", detailed: "The ruins of an ancient advanced civilization, with partially activated technology casting ethereal lights through overgrown vegetation" },
-    { short: "Quantum realm explorer", detailed: "A scientist in an iridescent protective suit exploring the quantum realm, surrounded by impossible geometric patterns and probability waves" },
-    { short: "Deep sea bio-mech", detailed: "A bioluminescent mechanical creature in the deep ocean, part organic and part machine, with tentacles of fiber optic cables" },
-    { short: "Desert nomad caravan", detailed: "A caravan of nomads riding biomechanical creatures across vast desert dunes, their tech-enhanced tents glowing under twin moons" },
-    { short: "Forest spirit gathering", detailed: "Ancient forest spirits gathering in a mystical grove, their ethereal forms interacting with floating orbs of natural energy" },
-    { short: "Space station garden", detailed: "A lush hydroponics garden inside a space station, with Earth visible through the dome window and astronauts tending to exotic plants" },
-    { short: "Time wizard's study", detailed: "The cluttered study of a time-traveling wizard, with temporal artifacts, floating chronometers, and windows showing different eras" },
-    { short: "Crystal cave meditation", detailed: "A monk meditating in a cave of giant crystals, energy flowing between the crystals and creating mesmerizing light patterns" },
-    { short: "Nanotech transformation", detailed: "A stream of nanobots transforming a desolate landscape into a thriving ecosystem, the transformation visible in mid-process" }
+    { short: "Ancient Jungle Ruins", detailed: "A lost civilization hidden deep in the Amazon jungle." },
+    { short: "Skyfall Island", detailed: "A floating island with waterfalls pouring into the sky." },
+    { short: "Tree of Civilization", detailed: "A giant tree with an entire city built in its branches." },
+    { short: "Mystic White Tiger", detailed: "A majestic white tiger with glowing blue eyes in a mystical forest." },
+    { short: "Flame Wolves Under the Blood Moon", detailed: "A group of wolves with fiery fur howling under a blood-red moon." },
+    { short: "Stormborn Sea Dragon", detailed: "A massive sea dragon emerging from stormy waters." },
+    { short: "Cybernetic Feline", detailed: "A futuristic robotic cat with glowing cybernetic enhancements." },
+    { short: "Crystal Paradise", detailed: "A hidden paradise with floating crystal islands and pink waterfalls." },
+    { short: "Mushroom Village", detailed: "A secret village built on the edge of a giant glowing mushroom." },
+    { short: "Stellar Express", detailed: "A train traveling through space, leaving a trail of stardust." },
+    { short: "The Old Mariner", detailed: "A weathered fisherman staring at the endless ocean, his face lined with years of stories." },
+    { short: "The Drunken Monkey", detailed: "A monkey sitting in a bar with a glass of beer." },
+    { short: "Lone Wolf Under the Moon", detailed: "A lone wolf standing on a snowy mountain peak, howling under a full moon." },
+    { short: "Desert Storm", detailed: "A thunderstorm rolling over a vast desert, lightning striking the distant dunes." },
+    { short: "Shadow Ninja in Battle", detailed: "A masked ninja leaping through the air, dodging arrows in an ancient Japanese village." },
+    { short: "Last Survivor of the Wasteland", detailed: "A post-apocalyptic soldier standing in a ruined city, holding a high-tech plasma rifle." },
+    { short: "Neon VR Warrior", detailed: "A futuristic esports gamer in a high-tech VR arena, fully immersed in a digital battleground." },
+    { short: "Runic Moonlit Lake", detailed: "A mystical lake glowing under the moonlight, with ancient runes carved into the rocks." },
+    { short: "Mountain Ghost Sniper", detailed: "A sniper hidden in the mountains, waiting for the perfect shot at sunrise." },
+    { short: "Blades of the Enchanted Forest", detailed: "A warrior in an enchanted forest, wielding a sword made of pure energy." },
+    { short: "Cyber Samurai of the Fallen Empire", detailed: "A high-tech samurai with glowing armor, standing on a battlefield of fire and steel." }
   ];
 
   // Function to get current two prompts
@@ -100,7 +105,6 @@ useEffect(() => {
     const secondIndex = (currentPromptIndex + 1) % samplePrompts.length;
     return [samplePrompts[firstIndex], samplePrompts[secondIndex]];
   };
-
 
   const handleSamplePromptClick = (detailedPrompt: string) => {
     setPrompt(detailedPrompt);
@@ -111,6 +115,7 @@ useEffect(() => {
       });
     }
   };
+
   // Hide sensitive API endpoint logging in production.
   React.useEffect(() => {
     if (process.env.NODE_ENV !== 'development') {

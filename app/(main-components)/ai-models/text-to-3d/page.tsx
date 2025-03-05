@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Loader2,
@@ -115,6 +115,17 @@ export default function TextTo3DPage() {
   const [error, setError] = useState<string | null>(null);
   const [inferenceTime, setInferenceTime] = useState<number | null>(null);
   const [options, setOptions] = useState<GenerationOptions>(defaultOptions);
+  
+  // Initialize the ref with null
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Use optional chaining to ensure containerRef.current exists
+    containerRef.current?.scrollTo({
+      top: containerRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, []);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -219,8 +230,7 @@ export default function TextTo3DPage() {
   };
 
   return (
-    <div className="h-screen w-screen fixed top-[8.5%] left-0 transition-colors duration-300 bg-[#1c1c1c] overflow-auto pb-20 md:pb-96">
- 
+    <div ref={containerRef} className="h-screen w-screen fixed top-[8.5%] left-0 transition-colors duration-300 bg-[#1c1c1c] overflow-auto pb-52 lg:pb-32 md:pb-44" >
       <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 lg:mt-2 md:mt-3 sticky top-0 z-50 bg-[#1c1c1c] mt-8 gap-4">
         <Link href="/ai-models" className="flex items-center self-start gap-2 text-gray-400 hover:text-white transition-all mb-2 md:mb-0">
           <div className="rounded-full border border-white/20 p-1">
@@ -228,16 +238,6 @@ export default function TextTo3DPage() {
           </div>  
           <span className="text-sm md:text-base">All AI Models</span>
         </Link>
-
-     
-        <div className="flex flex-col items-center md:items-start lg:items-start gap-3 text-white transition-all w-full md:w-auto">
-          <div className="flex flex-row gap-2 items-center justify-center">
-            <PercentDiamond />
-            <span className="text-sm md:text-base ">Select AI Model</span>
-          </div>
-          <AIModelDropdown onModelSelect={(model) => console.log("selected model:", model)} />
-
-        </div>
       </div>
 
       <div className="container mx-auto p-4 max-w-4xl self-center">
@@ -259,7 +259,6 @@ export default function TextTo3DPage() {
                     </SheetDescription>
                   </SheetHeader>
                   <div className="grid gap-4 py-4">
-               
                     <div className="flex justify-between items-center">
                       <Label className="text-sm text-white">Resolution</Label>
                       <Input
@@ -272,7 +271,6 @@ export default function TextTo3DPage() {
                         step={64}
                       />
                     </div>
-            
                     <div className="space-y-2">
                       <Label className="text-white">Output Format</Label>
                       <Select
@@ -290,7 +288,6 @@ export default function TextTo3DPage() {
                         </SelectContent>
                       </Select>
                     </div>
-           
                     <div className="space-y-2">
                       <Label className="text-white">Guidance Scale ({options.guidance_scale})</Label>
                       <Slider
@@ -301,7 +298,6 @@ export default function TextTo3DPage() {
                         step={0.1}
                       />
                     </div>
-               
                     <div className="space-y-2">
                       <Label className="text-white">Inference Steps ({options.num_inference_steps})</Label>
                       <Slider
@@ -312,7 +308,6 @@ export default function TextTo3DPage() {
                         step={1}
                       />
                     </div>
-                
                     <div className="flex items-center justify-between">
                       <Label className="text-white">Remove Background</Label>
                       <Switch
@@ -320,7 +315,6 @@ export default function TextTo3DPage() {
                         onCheckedChange={(checked) => setOptions(prev => ({ ...prev, remove_bg: checked }))}
                       />
                     </div>
-                   
                     <div className="flex items-center justify-between">
                       <Label className="text-white">Generate NeRF Video</Label>
                       <Switch
@@ -328,7 +322,6 @@ export default function TextTo3DPage() {
                         onCheckedChange={(checked) => setOptions(prev => ({ ...prev, render: checked }))}
                       />
                     </div>
-                    {/* Additional parameters */}
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center">
                         <Label className="text-sm text-white">SS Guidance Strength</Label>
@@ -410,7 +403,6 @@ export default function TextTo3DPage() {
                         />
                       </div>
                     </div>
-                 
                     <div className="pt-2">
                       <Button onClick={resetOptions} variant="outline" className="w-full bg-[#2c2c2c] border-white/10 text-white hover:bg-[#3c3c3c]">
                         <RefreshCw className="w-4 h-4 mr-2" />
@@ -424,7 +416,7 @@ export default function TextTo3DPage() {
           </CardHeader>
 
           <CardContent className="space-y-4 bg-[#1c1c1c]">
-            <div className="h-[400px] w-full bg-[#2c2c2c] rounded-lg overflow-hidden border border-white/10">
+            <div className="md:h-[400px] h-[300px] lg:h-[425px] w-full bg-[#2c2c2c] rounded-lg overflow-hidden border border-white/10">
               <ModelErrorBoundary onError={(msg) => setError(msg)}>
                 <ModelViewer src={generatedModelUrl || undefined} />
               </ModelErrorBoundary>
@@ -441,7 +433,15 @@ export default function TextTo3DPage() {
                 disabled={isGenerating}
               />
             </div>
-
+            <div className="space-y-2">
+            <Label className='ml-2'>Negative Prompt (Optional)</Label>
+            <Input
+              placeholder="Elements to exclude from the generation..."
+              value={options.negative_prompt}
+              onChange={(e) => setOptions(prev => ({ ...prev, negative_prompt: e.target.value }))}
+              disabled={isGenerating}
+            />
+          </div>
             {generatedModelUrl && (
               <div className="space-y-2 mt-4">
                 <div className="flex items-center justify-between mt-2">
@@ -468,40 +468,36 @@ export default function TextTo3DPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col gap-2 bg-[#1c1c1c]">
-  <Button
-    onClick={handleGenerate}
-    disabled={isGenerating || !prompt.trim()}
-    className="w-full bg-blue-600 hover:bg-blue-700 text-white lg:py-0 md:0 py-6"
-  >
-    {isGenerating ? (
-      <>
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Generating 3D Model...
-      </>
-    ) : (
-      <>
-        <Box className="mr-2 h-4 w-4" />
- 
-        <span className="flex flex-col md:hidden ">
-          <span>Generate 3D Model</span>
-          <span className="font-extralight opacity-80 text-sm">
-            Estimated: 20 sec / 25 credits
-          </span>
-        </span>
-       
-        <span className="hidden md:flex md:flex-row md:items-center">
-          <span>Generate 3D Model</span>
-          <span className="ml-2 font-extralight opacity-80 text-sm">
-            Estimated: 20 sec / 25 credits
-          </span>
-        </span>
-      </>
-    )}
-  </Button>
-  {error && <p className="text-sm text-red-500">{error}</p>}
-</CardFooter>
-
-
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating || !prompt.trim()}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white lg:py-0 md:0 py-6"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating 3D Model...
+                </>
+              ) : (
+                <>
+                  <Box className="mr-2 h-4 w-4" />
+                  <span className="flex flex-col md:hidden ">
+                    <span>Generate 3D Model</span>
+                    <span className="font-extralight opacity-80 text-sm">
+                      Estimated: 90 sec / 25 credits
+                    </span>
+                  </span>
+                  <span className="hidden md:flex md:flex-row md:items-center">
+                    <span>Generate 3D Model</span>
+                    <span className="ml-2 font-extralight opacity-80 text-sm">
+                      Estimated: 90 sec / 25 credits
+                    </span>
+                  </span>
+                </>
+              )}
+            </Button>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+          </CardFooter>
         </Card>
       </div>
     </div>
