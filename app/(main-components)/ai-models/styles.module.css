@@ -9,3 +9,17 @@
 .modelAction {
   @apply mt-6 flex justify-end space-x-4;
 }
+
+@media screen and (min-width:300px) and (max-width:600px) {
+  .vid {
+    @apply hidden
+  }
+
+  .totalvidbody {
+    @apply p-0
+  }
+
+  .vidicon {
+    @apply m-0
+  }
+}
