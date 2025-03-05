@@ -133,6 +133,7 @@
 .generated-images {
   display: flex;
   flex-direction: column;
+  
   gap: 2rem;
   padding-bottom: 8rem;
   max-width: 1200px;

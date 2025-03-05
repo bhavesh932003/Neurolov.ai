@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   ArrowLeft,
@@ -46,6 +46,34 @@ export default function NeuroImageGenerator() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
 
+const chatContainerRef = useRef<HTMLDivElement>(null);
+
+useEffect(() => {
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const timeoutId = setTimeout(scrollToBottom, 150);
+  
+  return () => clearTimeout(timeoutId);
+}, [chatHistory]);
+
+
+useEffect(() => {
+  if (chatContainerRef.current && chatHistory.length > 0) {
+    chatContainerRef.current.scrollTo({
+      top: chatContainerRef.current.scrollHeight,
+      behavior: 'smooth'
+    });
+  }
+}, []);
+
+
   // Sample prompts with short and detailed versions
   const samplePrompts = [
     { short: "Moonlit wolf with glowing eyes", detailed: "A majestic wolf standing on a rocky outcrop under a full moon, its eyes glowing with an ethereal blue light, surrounded by wisps of mist in a dark forest" },
@@ -73,10 +101,16 @@ export default function NeuroImageGenerator() {
     return [samplePrompts[firstIndex], samplePrompts[secondIndex]];
   };
 
+
   const handleSamplePromptClick = (detailedPrompt: string) => {
     setPrompt(detailedPrompt);
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
-
   // Hide sensitive API endpoint logging in production.
   React.useEffect(() => {
     if (process.env.NODE_ENV !== 'development') {
@@ -300,7 +334,7 @@ export default function NeuroImageGenerator() {
 
   return (
     <>
-      <div className="main-content bg-[#2c2c2c]" style={{ left: 0 }}>
+      <div className="main-content bg-[#2c2c2c]" style={{ left: 0 }} ref={chatContainerRef}>
         <div className='bg-black/10 relative'>
           <span className='text-xl sm:text-2xl lg:text-4xl absolute lg:top-8 top-2 left-4 sm:left-10 md:top-4'>Neurolov Image Gen</span>
           <img src='/ai-models/neuro image.png' className='h-16 lg:h-24 w-full object-cover'/>
@@ -314,7 +348,7 @@ export default function NeuroImageGenerator() {
             </button>
           </div>
 
-          <div className="generated-images">
+          <div className="generated-images" >
             <div className="welcome-header my-2 px-4 sm:px-0">
               <h2 className="greeting text-white font-bold text-2xl sm:text-3xl md:text-4xl">
                 Hi there, <span className="name">{userName}</span> <br /> what would you like to imagine today?
