@@ -112,10 +112,10 @@ export default function Home() {
     // Let DeployModelButton handle the actual deployment
   };
 
-  const FilterButton = ({ active, onClick, children }: 
-                        { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <Button 
-      variant="outline" 
+  const FilterButton = ({ active, onClick, children }:
+    { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <Button
+      variant="outline"
       className={`${styles.filterButton} ${active ? styles.filterButtonActive : ''}`}
       onClick={onClick}
     >
@@ -138,7 +138,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen  bg-gradient-to-b from-black to-gray-900 text-white">
-       <nav className="border-b border-gray-800 bg-black/50 backdrop-blur-sm sticky top-0 z-20">
+      <nav className="border-b border-gray-800 bg-black/50 backdrop-blur-sm sticky top-0 z-20">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
@@ -171,9 +171,8 @@ export default function Home() {
               {/* Models Bag Button */}
               <Button
                 variant="outline"
-                className={`navbar-models relative flex items-center gap-2 bg-[#0A0A0A] text-white border border-gray-800 hover:bg-[#1A1A1A] transition-all ${
-                  selectedModel ? 'border-blue-500 text-blue-500' : ''
-                }`}
+                className={`navbar-models relative flex items-center gap-2 bg-[#0A0A0A] text-white border border-gray-800 hover:bg-[#1A1A1A] transition-all ${selectedModel ? 'border-blue-500 text-blue-500' : ''
+                  }`}
                 onClick={() => setShowModelBag(true)}
               >
                 <div className="relative">
@@ -193,11 +192,10 @@ export default function Home() {
               {/* Filter buttons */}
               <Button
                 variant={showFiveStar ? "default" : "outline"}
-                className={`flex items-center gap-2 ${
-                  showFiveStar 
-                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                    : "bg-[#0A0A0A] text-white border-none hover:bg-[#1A1A1A]"
-                }`}
+                className={`flex items-center gap-2 ${showFiveStar
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-[#0A0A0A] text-white border-none hover:bg-[#1A1A1A]"
+                  }`}
                 onClick={() => setShowFiveStar(!showFiveStar)}
               >
                 <Star className="h-4 w-4" />
@@ -206,11 +204,10 @@ export default function Home() {
 
               <Button
                 variant={showAssured ? "default" : "outline"}
-                className={`flex items-center gap-2 ${
-                  showAssured 
-                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                    : "bg-[#0A0A0A] text-white border-none hover:bg-[#1A1A1A]"
-                }`}
+                className={`flex items-center gap-2 ${showAssured
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-[#0A0A0A] text-white border-none hover:bg-[#1A1A1A]"
+                  }`}
                 onClick={() => setShowAssured(!showAssured)}
               >
                 <Shield className="h-4 w-4" />
@@ -252,9 +249,8 @@ export default function Home() {
           <div className="flex justify-between items-center">
             <Button
               variant="outline"
-              className={`w-full navbar-models relative flex items-center justify-center gap-2 bg-[#0A0A0A] text-white border border-gray-800 hover:bg-[#1A1A1A] transition-all ${
-                selectedModel ? 'border-blue-500 text-blue-500' : ''
-              }`}
+              className={`w-full navbar-models relative flex items-center justify-center gap-2 bg-[#0A0A0A] text-white border border-gray-800 hover:bg-[#1A1A1A] transition-all ${selectedModel ? 'border-blue-500 text-blue-500' : ''
+                }`}
               onClick={() => setShowModelBag(true)}
             >
               <div className="relative">
@@ -271,15 +267,14 @@ export default function Home() {
               )}
             </Button>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant={showFiveStar ? "default" : "outline"}
-              className={`flex items-center justify-center gap-2 ${
-                showFiveStar 
-                  ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                  : "bg-[#0A0A0A] text-white border-none hover:bg-[#1A1A1A]"
-              }`}
+              className={`flex items-center justify-center gap-2 ${showFiveStar
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-[#0A0A0A] text-white border-none hover:bg-[#1A1A1A]"
+                }`}
               onClick={() => setShowFiveStar(!showFiveStar)}
             >
               <Star className="h-4 w-4" />
@@ -288,11 +283,10 @@ export default function Home() {
 
             <Button
               variant={showAssured ? "default" : "outline"}
-              className={`flex items-center justify-center gap-2 ${
-                showAssured 
-                  ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                  : "bg-[#0A0A0A] text-white border-none hover:bg-[#1A1A1A]"
-              }`}
+              className={`flex items-center justify-center gap-2 ${showAssured
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-[#0A0A0A] text-white border-none hover:bg-[#1A1A1A]"
+                }`}
               onClick={() => setShowAssured(!showAssured)}
             >
               <Shield className="h-4 w-4" />
@@ -352,11 +346,11 @@ export default function Home() {
                 className="object-contain w-[80%] h-[80%] transition-all duration-500 group-hover:scale-105 group-hover:brightness-75"
                 priority
               />
-              
+
               {/* Mobile Join Waitlist Button */}
               {!isGpuAvailable(gpu.id) && gpu.id.toLowerCase().startsWith('rtx') && (
                 <div className="block md:hidden mt-4">
-                  <Button 
+                  <Button
                     className="bg-blue-600 hover:bg-blue-700 text-white px-8"
                     onClick={handleJoinWaitlist}
                   >
@@ -369,15 +363,15 @@ export default function Home() {
             {/* Desktop Coming Soon Overlay */}
             {!isGpuAvailable(gpu.id) && (
               <div className="hidden md:block absolute inset-0 z-20">
-                <ComingSoonOverlay 
+                <ComingSoonOverlay
                   type="hover"
                   title="GPU Coming Soon"
-                  description={gpu.id.toLowerCase().startsWith('rtx') 
+                  description={gpu.id.toLowerCase().startsWith('rtx')
                     ? "Join our waitlist to get early access to this high-performance RTX GPU!"
                     : "This GPU will be available for deployment soon!"
                   }
                   customButton={gpu.id.toLowerCase().startsWith('rtx') ? (
-                    <Button 
+                    <Button
                       className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={handleJoinWaitlist}
                     >
@@ -389,7 +383,7 @@ export default function Home() {
             )}
 
             {/* Price and Button Container */}
-            <div 
+            <div
               className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-300"
               onClick={() => handleGpuSelect(gpu)}
             >
@@ -444,7 +438,7 @@ export default function Home() {
                     <Button
                       variant={useNlov ? "default" : "outline"}
                       onClick={() => setUseNlov(!useNlov)}
-                      className={useNlov 
+                      className={useNlov
                         ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0"
                         : "border-gray-600 text-gray-300 hover:bg-gray-800"
                       }
@@ -471,7 +465,7 @@ export default function Home() {
                   )}
                 </div>
 
-                <ComingSoonOverlay 
+                <ComingSoonOverlay
                   type="banner"
                   title="Compute"
                   description="Stay tuned for the launch."
@@ -569,11 +563,10 @@ export default function Home() {
                   {sortedGpus.map((gpu) => (
                     <div
                       key={gpu.id}
-                      className={`relative p-2 rounded-lg border cursor-pointer transition-colors ${
-                        selectedGpu?.id === gpu.id
-                          ? 'bg-blue-500/10 border-blue-500'
-                          : 'bg-gray-800/50 border-gray-700 hover:border-blue-500/50'
-                      }`}
+                      className={`relative p-2 rounded-lg border cursor-pointer transition-colors ${selectedGpu?.id === gpu.id
+                        ? 'bg-blue-500/10 border-blue-500'
+                        : 'bg-gray-800/50 border-gray-700 hover:border-blue-500/50'
+                        }`}
                       onClick={() => isGpuAvailable(gpu.id) && setSelectedGpu(gpu)}
                     >
                       <div className="flex items-center justify-between">
