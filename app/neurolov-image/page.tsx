@@ -9,12 +9,9 @@ import {
   Palette,
   Wand2,
   Loader2,
-  Sparkles,
   Trash2,
-  X,
-  Settings,
-  Copy,
-  Share
+  Share,
+  Copy
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -39,9 +36,7 @@ export default function NeuroImageGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedSize, setSelectedSize] = useState('1024x1024');
   const [selectedStyle, setSelectedStyle] = useState('photorealistic');
-  const [showSizeDialog, setShowSizeDialog] = useState(false);
   const [showStyleDialog, setShowStyleDialog] = useState(false);
-  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [userName, setUserName] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
@@ -334,7 +329,6 @@ export default function NeuroImageGenerator() {
     }
   };
 
-  const sizeOptions = ['512x512', '1024x1024'];
   const styleOptions = ['photorealistic', 'painting', 'cartoon', 'abstract', 'anime'];
 
   return (
@@ -383,8 +377,8 @@ export default function NeuroImageGenerator() {
                             {message.metadata?.size && <span className="metadata-tag">{message.metadata.size}</span>}
                             {message.metadata?.style && <span className="metadata-tag">{message.metadata.style}</span>}
                           </div>
-                        </div>
-                        <Button className="download-button" onClick={() => handleDownload(message.image!)} aria-label="Download image">
+                            </div>
+                            <Button className="download-button" onClick={() => handleDownload(message.image!)} aria-label="Download image">
                           <Download className="h-4 w-4" />
                         </Button>
                         <Button className="share-button" onClick={async () => {
@@ -475,9 +469,9 @@ export default function NeuroImageGenerator() {
               <Trash2 className="icon" />
               <span className="hidden sm:inline">Clear History</span>
             </button>
-            <button className="feature-button" onClick={() => setShowSettingsDialog(true)}>
-              <Settings className="icon" />
-              <span className="hidden sm:inline">Settings</span>
+            <button className="feature-button" onClick={() => setShowStyleDialog(true)}>
+              <Palette className="icon" />
+              <span className="hidden sm:inline">Style</span>
             </button>
             <button className="generate-button" onClick={handleGenerate} disabled={isGenerating || !prompt.trim()}>
               {isGenerating ? (
@@ -493,59 +487,6 @@ export default function NeuroImageGenerator() {
               )}
             </button>
           </div>
-
-          <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
-            <DialogContent className="dialog-content">
-              <DialogHeader>
-                <DialogTitle>Image Settings</DialogTitle>
-              </DialogHeader>
-              <div className="settings-options">
-                <button
-                  className="feature-button"
-                  onClick={() => {
-                    setShowSizeDialog(true);
-                    setShowSettingsDialog(false);
-                  }}
-                >
-                  <Image className="icon" />
-                  Image Size
-                </button>
-                <button
-                  className="feature-button"
-                  onClick={() => {
-                    setShowStyleDialog(true);
-                    setShowSettingsDialog(false);
-                  }}
-                >
-                  <Palette className="icon" />
-                  Style
-                </button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showSizeDialog} onOpenChange={setShowSizeDialog}>
-            <DialogContent className="dialog-content">
-              <DialogHeader>
-                <DialogTitle>Select Image Size</DialogTitle>
-              </DialogHeader>
-              <div className="dialog-options">
-                {sizeOptions.map((size) => (
-                  <Button
-                    key={size}
-                    variant="ghost"
-                    className={`option ${selectedSize === size ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedSize(size);
-                      setShowSizeDialog(false);
-                    }}
-                  >
-                    {size}
-                  </Button>
-                ))}
-              </div>
-            </DialogContent>
-          </Dialog>
 
           <Dialog open={showStyleDialog} onOpenChange={setShowStyleDialog}>
             <DialogContent className="dialog-content">

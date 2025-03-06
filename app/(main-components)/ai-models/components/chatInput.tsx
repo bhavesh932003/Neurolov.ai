@@ -20,7 +20,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
 
-
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -29,35 +28,64 @@ const ChatInput: React.FC<ChatInputProps> = ({
   }, [input]);
 
   return (
-    <div ref={inputContainerRef} className="flex items-end gap-2 p-2 relative">
-      <textarea
-        ref={textareaRef}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onClick={handleTextareaClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit();
-          }
-        }}
-        placeholder="Send a message..."
-        className="flex-1 bg-[#1a1a1a] text-white rounded-lg p-3 pr-10 min-h-[60px] max-h-[200px] resize-none border border-gray-800 focus:outline-none focus:border-gray-600"
-        style={{ transition: 'height 0.2s ease' }}
-      />
-      <Button
-        onClick={handleSubmit}
-        disabled={isGenerating || !input.trim()}
-        className="bg-blue-600 hover:bg-blue-800 cursor-pointer text-white rounded-lg p-2 flex items-center justify-center transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 transform hover:scale-105 disabled:bg-blue-600/50 disabled:hover:scale-100 disabled:hover:shadow-none"
-      >
-        {isGenerating ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <Send className="h-5 w-5" />
-        )}
-      </Button>
+    <div ref={inputContainerRef} className="p-2">
+      <div className="flex flex-col gap-2">
+        <div className="relative bg-[#1a1a1a] rounded-lg border border-gray-800">
+        <textarea
+  ref={textareaRef}
+  value={input}
+  onChange={(e) => setInput(e.target.value)}
+  onClick={handleTextareaClick}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  }}
+  placeholder="Send a message..."
+  className="w-full bg-transparent text-white rounded-lg p-3 pr-14 
+            min-h-[88px] max-h-[200px] resize-none focus:outline-none
+            overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-800 scrollbar-thumb-rounded-full"
+  style={{ transition: 'height 0.2s ease' }}
+/>
+
+          <Button
+            onClick={handleSubmit}
+            disabled={isGenerating || !input.trim()}
+            className="absolute right-2  bottom-3 bg-blue-600 hover:bg-blue-800 cursor-pointer text-white rounded-lg py-2 px-3 md:flex items-center justify-center transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 transform hover:scale-105 disabled:bg-blue-600/50 disabled:hover:scale-100 disabled:hover:shadow-none hidden"
+          >
+            {isGenerating ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+                <>
+                <Send className="h-5 w-5" />
+                  <span>Send</span>
+                </>
+            )}
+          </Button>
+        </div>
+
+    
+        <Button
+          onClick={handleSubmit}
+          disabled={isGenerating || !input.trim()}
+          className="md:hidden w-full bg-blue-600 hover:bg-blue-800 cursor-pointer text-white rounded-lg p-2 flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 disabled:bg-blue-600/50 disabled:hover:shadow-none mt-2"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Generating...</span>
+            </>
+          ) : (
+            <>
+              <Send className="h-5 w-5" />
+              <span>Send</span>
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 };
 
-export default ChatInput;   
+export default ChatInput;

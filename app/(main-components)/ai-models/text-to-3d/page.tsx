@@ -65,8 +65,15 @@ class ModelErrorBoundary extends React.Component<{ onError: (msg: string) => voi
   
   render() {
     if (this.state.hasError) {
-      // Render nothing so that the canvas doesn't show a broken model
-      return null;
+      // Return a placeholder with the same dimensions instead of null
+      return (
+        <div className="h-full w-full flex items-center justify-center bg-[#2c2c2c] text-white/50">
+          <div className="text-center p-4">
+            <p>Failed to load 3D model</p>
+            <p className="text-sm mt-2">Please try generating again</p>
+          </div>
+        </div>
+      );
     }
     return this.props.children;
   }
@@ -118,6 +125,7 @@ export default function TextTo3DPage() {
   
   // Initialize the ref with null
   const containerRef = useRef<HTMLDivElement>(null);
+  const errorBoundaryRef = useRef<ModelErrorBoundary>(null);
 
   useEffect(() => {
     // Use optional chaining to ensure containerRef.current exists
@@ -131,6 +139,11 @@ export default function TextTo3DPage() {
     if (!prompt.trim()) {
       toast.error('Please enter a prompt');
       return;
+    }
+
+    // Reset the error boundary if it exists
+    if (errorBoundaryRef.current) {
+      errorBoundaryRef.current.setState({ hasError: false, error: null });
     }
 
     setIsGenerating(true);
@@ -417,7 +430,7 @@ export default function TextTo3DPage() {
 
           <CardContent className="space-y-4 bg-[#1c1c1c]">
             <div className="md:h-[400px] h-[300px] lg:h-[425px] w-full bg-[#2c2c2c] rounded-lg overflow-hidden border border-white/10">
-              <ModelErrorBoundary onError={(msg) => setError(msg)}>
+              <ModelErrorBoundary ref={errorBoundaryRef} onError={(msg) => setError(msg)}>
                 <ModelViewer src={generatedModelUrl || undefined} />
               </ModelErrorBoundary>
             </div>
