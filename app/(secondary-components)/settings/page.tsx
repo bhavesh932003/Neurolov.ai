@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import styles from "./styles.module.css"
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -24,10 +25,10 @@ export default function SettingsPage() {
   const [level, setLevel] = useState(1);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className={`container mx-auto p-6 space-y-6  ${styles.settings} `}>
       {/* Profile Section */}
-      <Card className="p-6 bg-gradient-to-br from-gray-900 to-gray-800 border-blue-500/20">
-        <div className="flex items-center space-x-4">
+      <Card className={`p-6 bg-gradient-to-br from-gray-900 to-gray-800 border-blue-500/20 `}>
+        <div className={`flex items-center space-x-4 `}>
           <div className="relative">
             <div className="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
               <span className="text-2xl text-white">?</span>
