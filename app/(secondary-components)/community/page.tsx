@@ -97,14 +97,14 @@ export default function CommunityPage() {
           </div>
         </div>
       </div>
-
+{/* 
       <ComingSoonOverlay 
         title="Community Hub"
         description="Our community hub is under development. Get ready to connect, share, and collaborate!"
         version="2.0"
         type="fixed"
         className="z-[9999]"
-      />
+      /> */}
     </div>
   );
 }
