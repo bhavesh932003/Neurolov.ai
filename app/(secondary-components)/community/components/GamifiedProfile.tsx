@@ -5,13 +5,15 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Crown, ChevronDown, Trophy, Users, Gift, Copy, Medal, Plus, Sparkles } from 'lucide-react';
+import { Crown, ChevronDown, Trophy, Users, Gift, Copy, Medal, Plus, Sparkles, Star, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { getSupabaseClient } from '@/app/auth/supabase';
 import { useUser } from '@/app/auth/useUser';
 import toast from 'react-hot-toast';
 import { Confetti } from './Confetti';
+import { useQuestProgress } from '../hooks/useQuestsProgress';
+import { parseJSON } from 'date-fns';
 
 interface ReferralSlot {
   isActive: boolean;
@@ -31,10 +33,37 @@ interface RedeemCode {
   isRedeemedByUser?: boolean;
 }
 
+interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  quest_type: string;
+  reward_amount: number;
+  required_progress: number;
+  current_progress: number;
+  isCompleted: boolean;
+  completed_at: string | null;
+  progress_percentage: number;
+  start_date: string | null;
+  end_date: string | null;
+  status: string;
+  }
+  
+  interface QuestResponse {
+  success: boolean;
+  quests: Quest[];
+  message?: string;
+  }
+
 export const GamifiedProfile: React.FC = () => {
   const { user, loading } = useUser();
+  const {
+    progressState, 
+    clearAnimations,
+    syncQuestsWithServer
+  } = useQuestProgress()
   const [activeTab, setActiveTab] = useState<'achievements' | 'referrals' | 'redeem' | 'collections'>('achievements');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [referralCode, setReferralCode] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([]);
@@ -48,6 +77,8 @@ export const GamifiedProfile: React.FC = () => {
   const [showCreditAnimation, setShowCreditAnimation] = useState(false);
   const [creditAnimationValue, setCreditAnimationValue] = useState(0);
   const [progressPercentage, setProgressPercentage] = useState(0);
+
+const [quests, setQuests] = useState<Quest[]>([]); 
   
   const creditCountRef = useRef<HTMLSpanElement>(null);
   const progressControls = useAnimation();
@@ -187,7 +218,13 @@ export const GamifiedProfile: React.FC = () => {
 
   // Fetch user profile
   useEffect(() => {
-    if (!user || !user.id) return;
+    if (!user || !user.id) {
+      console.log("user is not awalable");
+      return;
+
+    };
+
+   
     
     const fetchUserProfile = async () => {
       const supabase = getSupabaseClient();
@@ -299,7 +336,7 @@ export const GamifiedProfile: React.FC = () => {
     const supabase = getSupabaseClient();
     
     try {
-      // Call the redeem_code RPC function
+     
       const { data, error } = await supabase.rpc('redeem_code', {
         code_text: newRedeemCode.trim(),
         user_uuid: user.id
@@ -412,6 +449,168 @@ export const GamifiedProfile: React.FC = () => {
       icon: '📋',
     });
   };
+
+  const getStartOfDayInLocalTimeZone = (date: Date, timeZone: string) => {
+    const localDate = new Date(date.toLocaleString('en-US', { timeZone }));
+    localDate.setHours(0, 0, 0, 0); // Set to start of day in local time
+    return localDate;
+  };
+  const getUserTimeZone = () => {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  };
+
+  useEffect(() => {
+    const fetchAndSyncQuests = async () => {
+      if (loading || !user?.id) {
+        return;
+      }
+  
+      try {
+        // Get cached quests 
+        const cachedQuests = localStorage.getItem('quests_data');
+        if (cachedQuests) {
+          setQuests(JSON.parse(cachedQuests));
+          
+          // Get the user's local time zone
+          const userTimeZone = getUserTimeZone();
+          
+          // Check if we need to sync with server based on timezone-aware daily reset
+          const lastResetTimestamp = localStorage.getItem('quests_last_reset_timestamp');
+          const now = new Date();
+          
+          // Calculate the start of the current day in the user's local time zone
+          const localStartOfDay = getStartOfDayInLocalTimeZone(now, userTimeZone);
+          
+          let needsSync = false;
+          
+          if (!lastResetTimestamp) {
+            needsSync = true;
+          } else {
+            const lastResetDate = new Date(lastResetTimestamp);
+            const lastResetLocalDay = getStartOfDayInLocalTimeZone(lastResetDate, userTimeZone);
+            
+            // we need to sync
+            needsSync = localStartOfDay > lastResetLocalDay;
+          }
+          
+          if (needsSync) {
+            // Sync with server
+            const syncResult = await syncQuestsWithServer(user.id);
+            
+            if (syncResult.success) {
+              setQuests(syncResult.quests);
+              
+          
+              localStorage.setItem('quests_last_reset_timestamp', now.toISOString());
+              
+              toast.success('Daily quests have been reset!', {
+                icon: '🔄',
+                duration: 3000
+              });
+            }
+          }
+        } else {
+          // No cached quests, must fetch from server
+          const syncResult = await syncQuestsWithServer(user.id);
+          
+          if (syncResult.success) {
+            setQuests(syncResult.quests);
+      
+            localStorage.setItem('quests_last_reset_timestamp', new Date().toISOString());
+            
+            toast.success('Daily quests have been reset!', {
+              icon: '🔄',
+              duration: 3000
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error in fetchAndSyncQuests:", err);
+      }
+    };
+  
+    fetchAndSyncQuests();
+  }, [user, loading, syncQuestsWithServer]);
+  
+  useEffect(() => {
+    const runAnimations = async () => {
+      if (progressState.hasAnimation) {
+        // If we have newly completed quests
+        if (progressState.questsWithChanges.some(q => q.isNewlyCompleted)) {
+          // Animation for credits gained
+          if (progressState.creditsGained > 0) {
+            setCreditAnimationValue(progressState.creditsGained);
+            setShowCreditAnimation(true);
+  
+            // Wait for the credit animation to finish (2 seconds)
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            setShowCreditAnimation(false);
+  
+            // Update user profile with new credits
+            const newTotalCredits = (userProfile?.credits || 0) + progressState.creditsGained;
+            
+            // Update user profile
+            setUserProfile(prev => ({
+              ...prev,
+              credits: newTotalCredits
+            }));
+  
+            // Recalculate level and progress
+            const newLevel = Math.floor(newTotalCredits / 100) + 1;
+            const nextLevelCredits = newLevel * 100;
+            const previousLevelCredits = (newLevel - 1) * 100;
+            const currentProgress = newTotalCredits - previousLevelCredits;
+            const requiredProgress = nextLevelCredits - previousLevelCredits;
+            const newPercentage = Math.min(Math.floor((currentProgress / requiredProgress) * 100), 100);
+  
+            // Animate progress bar
+            progressControls.start({
+              width: `${newPercentage}%`,
+              transition: { duration: 1, ease: "easeOut" }
+            });
+  
+            setProgressPercentage(newPercentage);
+          }
+  
+          // Check if level up should occur
+          if (userProfile?.credits) {
+            const newCredits = userProfile.credits + progressState.creditsGained;
+            const newLevel = Math.floor(newCredits / 100) + 1;
+  
+            if (newLevel > userLevel) {
+              setPreviousLevel(userLevel);
+              setUserLevel(newLevel);
+              setShowLevelUpAnimation(true);
+  
+              // Trigger confetti after a short delay (300ms)
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              triggerConfetti();
+  
+              // Wait for the level-up animation to finish (3 seconds)
+              await new Promise((resolve) => setTimeout(resolve, 3000));
+              setShowLevelUpAnimation(false);
+            }
+          }
+        }
+  
+        // Clear animations after they've been shown
+        clearAnimations();
+      }
+    };
+  
+    runAnimations();
+  }, [progressState, userProfile, userLevel, clearAnimations, progressControls]);
+  
+  // Function to get animation class for completed quests
+  const getQuestHighlight = (questId: string) => {
+    const animatingQuest = progressState.questsWithChanges.find(q => q.id === questId);
+    if (animatingQuest?.isNewlyCompleted) {
+      return "animate-pulse border-green-500/50 bg-green-500/10";
+    }
+    return "";
+  };
+
+
 
   return (
     <div className="h-[calc(100vh-16rem)] flex flex-col relative">
@@ -730,44 +929,159 @@ export const GamifiedProfile: React.FC = () => {
                       </div>
                     )}
 
-                    {activeTab === 'achievements' && (
-                      <div className="space-y-2">
-                        {achievements.map((achievement, index) => (
-                          <motion.div 
-                            key={index} 
-                            className="space-y-1"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                          >
-                            <div className="flex justify-between text-sm">
-                            <span className="text-white">{achievement.title}</span>
-                            <span className="text-gray-400">{achievement.progress}%</span>
-                          </div>
-                          <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-                            <motion.div
-                              className={`h-full ${achievement.progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${achievement.progress}%` }}
-                              transition={{ duration: 1, ease: "easeOut", delay: index * 0.1 + 0.2 }}
-                            />
-                          </div>
-                          <p className="text-xs text-gray-400">{achievement.description}</p>
-                          {achievement.progress === 100 && (
-                            <motion.div
-                              className="flex items-center gap-1 text-xs text-green-400"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: index * 0.1 + 0.8 }}
-                            >
-                              <Sparkles className="w-3 h-3" />
-                              <span>Completed</span>
-                            </motion.div>
-                          )}
-                        </motion.div>
-                      ))}
+{activeTab === 'achievements' && (
+  <div className="space-y-4">
+    {/* Special Quests Section */}
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 mb-3">
+        <Trophy className="w-4 h-4 text-yellow-400" />
+        <h3 className="text-sm font-semibold text-white">Special Quests</h3>
+      </div>
+      
+      {quests
+        .filter(quest => quest.quest_type === 'SPECIAL')
+        .map((quest, index) => (
+          <motion.div 
+        key={quest.id}
+        className={`relative ${getQuestHighlight(quest.id)}`}
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: index * 0.1 }}
+      >
+        <Card className={cn(
+          "bg-black/20 border-blue-500/10 overflow-hidden",
+          quest.isCompleted && "border-green-500/20"
+        )}>
+              <div className="p-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <motion.div 
+                      className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center"
+                      whileHover={{ rotate: [0, -5, 5, 0] }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <Sparkles className="w-4 h-4 text-yellow-400" />
+                    </motion.div>
+                    <div>
+                      <h4 className="text-sm font-medium text-white">{quest.title}</h4>
+                      <p className="text-xs text-gray-400">{quest.description}</p>
                     </div>
-                  )}
+                  </div>
+                  <span className="text-sm font-medium text-yellow-400">+{quest.reward_amount}</span>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>Progress</span>
+                    <span>{quest.progress_percentage}%</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                    <motion.div
+                      className={cn(
+                        "h-full rounded-full",
+                        quest.isCompleted 
+                          ? "bg-green-500" 
+                          : "bg-gradient-to-r from-yellow-500 to-orange-500"
+                      )}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${quest.progress_percentage}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                    />
+                  </div>
+                </div>
+
+                {quest.isCompleted && (
+                  <motion.div
+                    className="flex items-center gap-1.5 text-xs text-green-400"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <Trophy className="w-3 h-3" />
+                    <span>Completed on {new Date(quest.completed_at!).toLocaleDateString()}</span>
+                  </motion.div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        ))}
+    </div>
+
+    {/* Daily Quests Section */}
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 mb-3">
+        <Clock className="w-4 h-4 text-blue-400" />
+        <h3 className="text-sm font-semibold text-white">Daily Quests</h3>
+      </div>
+      
+      {quests
+        .filter(quest => quest.quest_type === 'DAILY')
+        .map((quest, index) => (
+          <motion.div 
+            key={quest.id}
+            className="relative"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card className={cn(
+              "bg-black/20 border-blue-500/10 overflow-hidden",
+              quest.isCompleted && "border-green-500/20"
+            )}>
+              <div className="p-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <motion.div 
+                      className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center"
+                      whileHover={{ rotate: [0, -5, 5, 0] }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <Star className="w-4 h-4 text-blue-400" />
+                    </motion.div>
+                    <div>
+                      <h4 className="text-sm font-medium text-white">{quest.title}</h4>
+                      <p className="text-xs text-gray-400">{quest.description}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-blue-400">+{quest.reward_amount}</span>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>Progress</span>
+                    <span>{quest.progress_percentage}%</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                    <motion.div
+                      className={cn(
+                        "h-full rounded-full",
+                        quest.isCompleted 
+                          ? "bg-green-500" 
+                          : "bg-gradient-to-r from-blue-500 to-cyan-500"
+                      )}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${quest.progress_percentage}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                    />
+                  </div>
+                </div>
+
+                {quest.isCompleted && (
+                  <motion.div
+                    className="flex items-center gap-1.5 text-xs text-green-400"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <Trophy className="w-3 h-3" />
+                    <span>Completed on {new Date(quest.completed_at!).toLocaleDateString()}</span>
+                  </motion.div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        ))}
+    </div>
+  </div>
+)}
 
                   {activeTab === 'collections' && (
                     <div className="grid grid-cols-2 gap-2">
