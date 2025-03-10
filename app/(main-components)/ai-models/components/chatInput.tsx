@@ -29,7 +29,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div ref={inputContainerRef} className="p-2">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1 md:gap-2 lg:gap-2">
         <div className="relative bg-[#1a1a1a] rounded-lg border border-gray-800">
         <textarea
   ref={textareaRef}
@@ -44,7 +44,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   }}
   placeholder="Send a message..."
   className="w-full bg-transparent text-white rounded-lg p-3 pr-14 
-            min-h-[88px] max-h-[200px] resize-none focus:outline-none
+            min-h-[55px] md:min-h-[75px] lg:min-h-[88px] max-h-[160px] md:max-h-[180px] lg:max-h-[200px] resize-none focus:outline-none
             overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-800 scrollbar-thumb-rounded-full"
   style={{ transition: 'height 0.2s ease' }}
 />

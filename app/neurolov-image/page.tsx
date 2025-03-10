@@ -17,6 +17,8 @@ import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useUser } from '@/app/auth/useUser';
 import './neuroStyle.css';
+import { getSupabaseClient } from '../auth/supabase';
+import { useQuestProgress } from '../(secondary-components)/community/hooks/useQuestsProgress';
 
 interface ChatMessage {
   type: 'prompt' | 'response';
@@ -40,6 +42,28 @@ export default function NeuroImageGenerator() {
   const [userName, setUserName] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+
+  const supabase = getSupabaseClient();
+
+  async function updateQuestProgressApi() {
+    if (!user) {
+      return
+    }
+
+    const { data, error } = await supabase.rpc('update_quest_progress', {
+      action_value: 40,
+      user_uuid: user.id,
+      message_type: 'img_gen'
+    });
+  
+    if (error) {
+      console.error('Error updating quest progress:', error);
+      return;
+    }
+  
+    console.log('Quest progress updated successfully:', data);
+  }
+  const { updateQuestProgress } = useQuestProgress();
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -266,6 +290,8 @@ export default function NeuroImageGenerator() {
         setChatHistory(prev => prev.map((msg, i) => 
           i === prev.length - 1 ? { ...msg, image: data.images[0] } : msg
         ));
+        updateQuestProgressApi();
+        updateQuestProgress('img_gen',40);
       }
     } catch (error) {
       console.error('Generation error:', error);

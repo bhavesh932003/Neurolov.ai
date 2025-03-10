@@ -252,7 +252,7 @@ export default function UncensoredChatPage() {
         </Button>
       </div>
 
-      <div className="flex flex-col px-3 md:px-16 lg:px-32 justify-between max-h-[82vh] overflow-auto pb-32 md:pb-24 md:mt-8 mt-6 lg:mt-12" ref={chatContainerRef}>
+      <div className="flex flex-col px-3 md:px-16 lg:px-32 justify-between max-h-[82vh] overflow-auto pb-20 md:pb-16 md:mt-8 mt-6 lg:mt-12" ref={chatContainerRef}>
         {/* Chat Interface Container */}
         <div className="flex flex-col px-2 md:px-16 lg:px-32 justify-between">
           <div
@@ -261,9 +261,9 @@ export default function UncensoredChatPage() {
             }`}
           >
             {/* Hero section */}
-            <div className="flex justify-between items-center px-4 md:px-10 my-4 relative md:py-6 lg:py-12 py-6 border-b border-white/25">
+            <div className="flex justify-between items-center px-4 md:px-10 my-2 lg:my-4 md:my-4 relative md:py-6 lg:py-12 py-3 border-b border-white/25">
               <div className="w-2/3 pr-4">
-                <h1 className="text-3xl md:text-4xl lg:text-5xl text-gray-400 mb-3">
+                <h1 className="text-xl md:text-4xl lg:text-5xl text-gray-400 mb-3">
                   No rules, no censors{' '}
                   <span className="text-white font-semibold italic">Freedom AI</span> is Here
                 </h1>
@@ -271,7 +271,7 @@ export default function UncensoredChatPage() {
 
               {/* Polygon Animation */}
               <div className="flex-shrink-0 absolute right-[2%]">
-                <div className="w-28 h-28 md:w-40 md:h-40 lg:w-48 lg:h-48 relative">
+                <div className="w-[72px] h-[72px] md:w-40 md:h-40 lg:w-48 lg:h-48 relative">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-full h-full modern-polygon">
                       <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -323,7 +323,7 @@ export default function UncensoredChatPage() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 p-4">
+            <div className="flex-1 p-4 ">
               {hasChatMessages ? (
                 messages.slice(1).map((message, index) => (
                   <div
@@ -331,7 +331,7 @@ export default function UncensoredChatPage() {
                     className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'} mb-4`}
                   >
                     <div
-                      className={`max-w-[75%] rounded-lg p-4 ${
+                      className={`max-w-[75%] rounded-lg  p-3 md:py-4 lg:py-4 text-sm sm:text-base   ${
                         message.role === 'assistant' ? 'bg-zinc-800/80 text-gray-300' : 'bg-blue-600 text-white'
                       }`}
                     >
@@ -345,12 +345,12 @@ export default function UncensoredChatPage() {
                 </div>
               )}
               <div ref={messagesEndRef} />
-            </div>
+            </div>  
 
             {/* Footer with sample prompts & ChatInput */}
             <div className="border-t border-gray-800 bg-zinc-900/50 p-2 mt-auto">
          {/* Toggle buttons */}
-<div className="flex justify-between items-center px-2 py-2">
+<div className="flex justify-between items-center px-2 lg:py-2 md:py-2 py-1">
   {!isCensored && (
     <Button
       onClick={() => setShowSamplePrompts(!showSamplePrompts)}
