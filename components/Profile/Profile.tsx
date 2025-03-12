@@ -1,15 +1,18 @@
-'use client';
+"use client";
 
 import { useUser } from '@/app/auth/useUser';
+import { getSupabaseClient } from '@/app/auth/supabase';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Copy, ExternalLink } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
 export default function Profile() {
   const { user } = useUser();
   const [copied, setCopied] = useState(false);
+  const [plan, setPlan] = useState<string | null>(null);
+  const [credits, setCredits] = useState<number>(0);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -17,6 +20,28 @@ export default function Profile() {
     toast.success('Copied to clipboard!');
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Fetch plan and credits from Supabase once the user is available.
+  useEffect(() => {
+    if (user) {
+      const fetchPlanAndCredits = async () => {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('plan, credits')
+          .eq('id', user.id)
+          .single();
+        if (error) {
+          console.error("Error fetching plan:", error);
+          setPlan("free");
+        } else {
+          setPlan(data?.plan || "free");
+          setCredits(data?.credits ?? 0);
+        }
+      };
+      fetchPlanAndCredits();
+    }
+  }, [user]);
 
   if (!user) return null;
 
@@ -34,8 +59,12 @@ export default function Profile() {
               {user.user_metadata?.full_name?.[0] || user.email?.[0]}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">{user.user_metadata?.full_name || 'Anonymous'}</h2>
-              <p className="text-gray-400">Member since {new Date(user.created_at).toLocaleDateString()}</p>
+              <h2 className="text-2xl font-bold text-white">
+                {user.user_metadata?.full_name || 'Anonymous'}
+              </h2>
+              <p className="text-gray-400">
+                Member since {new Date(user.created_at).toLocaleDateString()}
+              </p>
             </div>
           </div>
 
@@ -44,11 +73,13 @@ export default function Profile() {
               <label className="text-sm text-gray-400">Email</label>
               <p className="text-white font-medium">{user.email}</p>
             </div>
-            
+
             <div>
               <label className="text-sm text-gray-400">User ID</label>
               <div className="flex items-center space-x-2">
-                <code className="text-white bg-white/5 px-2 py-1 rounded">{user.id}</code>
+                <code className="text-white bg-white/5 px-2 py-1 rounded">
+                  {user.id}
+                </code>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -66,14 +97,14 @@ export default function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-6 bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-xl border-white/5">
             <h3 className="text-lg font-medium text-gray-400 mb-2">Current Plan</h3>
-            <p className="text-2xl font-bold text-white">Free</p>
+            <p className="text-2xl font-bold text-white">{plan}</p>
           </Card>
-          
+
           <Card className="p-6 bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-xl border-white/5">
             <h3 className="text-lg font-medium text-gray-400 mb-2">Available Credits</h3>
-            <p className="text-2xl font-bold text-white">...</p>
+            <p className="text-2xl font-bold text-white">{credits}</p>
           </Card>
-          
+
           <Card className="p-6 bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-xl border-white/5">
             <h3 className="text-lg font-medium text-gray-400 mb-2">Active GPUs</h3>
             <p className="text-2xl font-bold text-white">0</p>
