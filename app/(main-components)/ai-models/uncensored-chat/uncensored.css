@@ -379,3 +379,11 @@ html {
 .transition-all {
   transition: all 0.3s ease;
 }
+
+.transition-width {
+  transition-property: width;
+}
+
+.transition-margin {
+  transition-property: margin;
+}
