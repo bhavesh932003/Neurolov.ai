@@ -62,28 +62,34 @@ export default function Home() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(true);
 
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = getSupabaseClient()
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (session?.user) {
+
+      } else if (error || !session) {
+      
+        router.push('/');
+      }
+    };
+    fetchUser();
+  }, []);
+
+  
   // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
+
+
+  
   if (!mounted) {
     return null;
   }
 
-    useEffect(() => {
-      const fetchUser = async () => {
-        const supabase = getSupabaseClient()
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (session?.user) {
-
-        } else if (error || !session) {
-        
-          router.push('/');
-        }
-      };
-      fetchUser();
-    }, []);
+   
   
   
   // Sort GPUs based on selected criteria and custom order
