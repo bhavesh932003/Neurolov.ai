@@ -19,6 +19,7 @@ import { useUser } from '@/app/auth/useUser';
 import './neuroStyle.css';
 import { getSupabaseClient } from '../auth/supabase';
 import { useQuestProgress } from '../(secondary-components)/community/hooks/useQuestsProgress';
+import WelcomeModal from '@/components/modals/WelcomeModal';
 
 interface ChatMessage {
   type: 'prompt' | 'response';
@@ -42,8 +43,44 @@ export default function NeuroImageGenerator() {
   const [userName, setUserName] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+
 
   const supabase = getSupabaseClient();
+
+     useEffect(() => {
+        const fetchUser = async () => {
+       
+          const { data: { session }, error } = await supabase.auth.getSession()
+          if (session?.user) {
+  
+          } else if (error || !session) {
+          
+            router.push('/');
+          }
+        };
+        fetchUser();
+      }, []);
+
+  const neurolov_image_welcome = [
+    {
+      title: "NeuroGen Image",
+      description: "Transform your imagination into stunning visuals. Generate unique AI images for just 10 credits per creation.",
+      icon: <Image className="w-16 h-16 text-blue-400" />,
+      confettiTrigger: false,
+      actionButton: {
+        label: "Start Creating",
+        action: () => {
+     
+          const promptTextarea = document.querySelector('textarea');
+          if (promptTextarea) {
+            promptTextarea.focus();
+          }
+         
+        }
+      }
+    }
+  ];
 
   async function updateQuestProgressApi() {
     if (!user) {
@@ -359,6 +396,7 @@ export default function NeuroImageGenerator() {
 
   return (
     <>
+      <WelcomeModal pageName='imagegen' isCloseButton={false} isOpen={showWelcomeModal} onClose={() => setShowWelcomeModal(false) } stages={neurolov_image_welcome} />
       <div className="main-content bg-[#2c2c2c]" style={{ left: 0 }} ref={chatContainerRef}>
         <div className='bg-black/10 relative'>
           <span className='text-xl sm:text-2xl lg:text-4xl absolute lg:top-8 top-2 left-4 sm:left-10 md:top-4'>Neurolov Image Gen</span>

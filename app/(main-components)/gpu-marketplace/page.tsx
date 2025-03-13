@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ChevronDown, Star, Shield, ShoppingBag, Brain, X, Search } from "lucide-react";
+import { ChevronDown, Star, Shield, ShoppingBag, Brain, X, Search, Rocket } from "lucide-react";
 import styles from './styles.module.css';
 import { useToast } from "@/components/ui/use-toast";
 import { ComingSoonOverlay } from '@/components/ComingSoonOverlay';
@@ -28,6 +28,11 @@ import { DeployModelButton } from './deploy-model';
 import { GPULabClient } from '@/app/gpulab/gpulab-service';
 import { gpuData } from '@/constants/values';
 import { useUser } from '@/app/auth/useUser';
+import WelcomeModal from '@/components/modals/WelcomeModal';
+import { Cpu } from 'lucide-react';
+import { getSupabaseClient } from '@/app/auth/supabase';
+
+
 
 const COMPATIBLE_GPUS = ['rtx4090', 'rtx3090ti', 'rtx3090', 'a6000', 'a5000', 'a4000', 'a100', 'a40', 'h100'];
 const DEV_EMAILS = ['nitishmeswal@gmail.com', 'neohex262@gmail.com', 'neurolov.ai@gmail.com', 'jprateek961@gmail.com'];
@@ -54,6 +59,8 @@ export default function Home() {
   const gpuLabClient = new GPULabClient();
   const { toast } = useToast();
   const { user } = useUser();
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -64,6 +71,21 @@ export default function Home() {
     return null;
   }
 
+    useEffect(() => {
+      const fetchUser = async () => {
+        const supabase = getSupabaseClient()
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (session?.user) {
+
+        } else if (error || !session) {
+        
+          router.push('/');
+        }
+      };
+      fetchUser();
+    }, []);
+  
+  
   // Sort GPUs based on selected criteria and custom order
   const sortedGpus = [...gpuData].sort((a, b) => {
     // Helper function to check GPU series
@@ -136,8 +158,27 @@ export default function Home() {
     window.open('https://docs.google.com/forms/d/1RxEzc8q1qbq2TdFRssjewASl_-U7WVBSr3AEvwL81LQ/edit', '_blank');
   };
 
+ 
+  const compute_welcome = [
+    {
+      title: "Neurolov Compute",
+      description: "Unlock powerful GPU resources for your AI projects. Select from a range of high-performance GPUs and pay only for what you use.",
+      icon: <Cpu className="w-16 h-16 text-blue-400" />,
+      confettiTrigger: false,
+      actionButton: {
+        label: "Start Exploring GPUs",
+        action: () => {
+        
+        }
+      }
+    }
+  ];
+  
+
   return (
-    <div className="min-h-screen  bg-gradient-to-b from-black to-gray-900 text-white">
+    <>
+      <WelcomeModal pageName='compute' isCloseButton={false} isOpen={showWelcomeModal} onClose={ () => setShowWelcomeModal(false) } stages={compute_welcome} />
+      <div className="min-h-screen  bg-gradient-to-b from-black to-gray-900 text-white">
       <nav className="border-b border-gray-800 bg-black/50 backdrop-blur-sm sticky top-0 z-20">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
@@ -639,5 +680,7 @@ export default function Home() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
+  
   );
 };

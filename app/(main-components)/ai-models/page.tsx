@@ -60,6 +60,7 @@ import { ComingSoonOverlay } from '@/components/ComingSoonOverlay';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 // Import Badge from your UI components (adjust the path as needed)
 import { Badge } from '@/components/ui/badge';
+import WelcomeModal from '@/components/modals/WelcomeModal';
 
 const DEV_EMAILS = ['nitishmeswal@gmail.com', 'neohex262@gmail.com', 'neurolov.ai@gmail.com', 'jprateek961@gmail.com', 'aitipamulaprapitesh02@gmail.com', 'fackidacc084@gmail.com', ];
 
@@ -127,6 +128,8 @@ export default function AIModelsPage() {
   const [view, setView] = useState<'explore' | 'my-models'>('explore');
   const [isDemoOpen, setIsDemoOpen] = useState(false);
   const [showModelInfo, setShowModelInfo] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+
   const [modelToView, setModelToView] = useState<AIModel | null>(null);
   const MAX_GENERATIONS = 5;
 
@@ -143,6 +146,35 @@ export default function AIModelsPage() {
 
   const [baseModelLikes, setBaseModelLikes] = useState<Record<string, { count: number, isLiked: boolean }>>({});
   const [incrementedLikes, setIncrementedLikes] = useState<Record<string, number>>({});
+
+  const ai_models_welcome = [
+    {
+      title: "NeuroGen Image",
+      description: "Generate stunning AI images using your credits. Unleash your creativity with advanced image generation technology.",
+      icon: <ImageIcon className="w-16 h-16 text-blue-400" />,
+      confettiTrigger: false,
+     
+    },
+    {
+      title: "Freedom AI Chat",
+      description: "Engage in unrestricted conversations with our advanced uncensored AI model. Experience truly open dialogue.",
+      icon: <MessageSquare className="w-16 h-16 text-purple-400" />,
+      confettiTrigger: false,
+     
+    },
+    {
+      title: "More AI Innovations Coming",
+      description: "Get ready for exciting new AI models! 3D generation, video creation, music composition, and more are on the horizon.",
+      icon: <Rocket className="w-16 h-16 text-green-400" />,
+      confettiTrigger: false,
+      actionButton: {
+        label: "Stay Tuned",
+        action: () => {
+         
+        }
+      }
+    }
+  ];
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -458,7 +490,9 @@ export default function AIModelsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-4">
+    <>
+      <WelcomeModal pageName='aimodel' isCloseButton={true} isOpen={showWelcomeModal} onClose={() => setShowWelcomeModal(false) } stages={ai_models_welcome} />
+     <div className="container mx-auto px-4 py-4">
       {/* Search and Filter Section */}
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex items-center gap-4">
@@ -631,5 +665,6 @@ export default function AIModelsPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,9 @@ import { useUser } from '@/app/auth/useUser';
 import styles from './styles.module.scss';
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
+import { getSupabaseClient } from "@/app/auth/supabase";
+import WelcomeModal from "@/components/modals/WelcomeModal";
+import { Gift, Rocket, Sparkles } from "lucide-react";
 
 const BetaTag = () => (
   <Badge 
@@ -21,11 +24,121 @@ const BetaTag = () => (
 const DashboardPage = () => {
   const router = useRouter();
   const { user, loading } = useUser();
-  const [mounted, setMounted] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+  const [userCredits, setUserCredits] = useState(0);
 
+  const [mounted, setMounted] = useState(false);
+  const [referralProcessed, setReferralProcessed] = useState(false);
+
+  // Process referral function
+  const processReferral = async (userId : string) => {
+    
+    const referralCode = localStorage.getItem("referralCode");
+    if (!referralCode) return false;
+    
+    try {
+      const client = getSupabaseClient();
+      
+      const { data, error } = await client.rpc('create_referral_relationship', { 
+        referred_user_id: userId,
+        ref_referral_code: referralCode
+      });
+      
+      if (error) {
+  
+        if (!error.message.includes('duplicate key value violates unique constraint')) {
+          toast.error('Failed to process referral', {
+            description: error.message || 'An unexpected error occurred'
+          });
+        } else {
+        toast.success('Referral processed successfully');
+
+        localStorage.removeItem('referralCode');
+        }
+        return false;
+      }
+      
+      if (data) {
+        toast.success('Referral processed successfully');
+        localStorage.removeItem('referralCode');
+
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Referral processing error:', error);
+      toast.error('An unexpected error occurred while processing referral');
+      return false;
+    }
+  };
+
+  
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    if (user && user.id && !referralProcessed) {
+      const fetchUserDataAndProcessReferral = async () => {
+
+        if (localStorage.getItem("referralCode")) {
+          const success = await processReferral(user.id);
+          if (success) {
+            setReferralProcessed(true);
+          }
+        }
+        
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('credits')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching credits:', error);
+          return;
+        }
+        
+        if (data) {
+          setUserCredits(data.credits);
+        }
+      };
+      
+      fetchUserDataAndProcessReferral();
+    }
+  }, [user, referralProcessed]);
+
+
+const welcome_user = [
+  {
+    title: "Welcome to Neurolov.ai",
+    description: "Explore cutting-edge AI models",
+    icon: <Sparkles className="w-16 h-16 text-yellow-400" />,
+    confettiTrigger: false
+  },
+  {
+    title: "Signup Reward",
+    description: "You got your welcome credits",
+    icon: <Gift className="w-16 h-16 text-green-400" />,
+    confettiTrigger: true
+  },
+  {
+    title: "AI Journey",
+    description: "Start exploring amazing AI models",
+    icon: <Rocket className="w-16 h-16 text-blue-400" />,
+    confettiTrigger: false,
+    actionButton: {
+      label: "Explore Models",
+      action: () => router.push("/ai-models")
+    }
+  }
+];
+
+
+
+
+
+
 
   if (!mounted) return null;
 
@@ -49,7 +162,19 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <>
+      <WelcomeModal 
+        pageName="dashboard"
+        isCloseButton={true}
+  isOpen={showWelcomeModal} 
+  onClose={() => setShowWelcomeModal(false)}
+  stages={welcome_user} 
+ 
+  initialCredits={100} 
+/>
+
+     <div className="p-8 max-w-[1600px] mx-auto">
+      
       <div className="mb-8">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-[#40A6FF] to-[#2D63FF] text-transparent bg-clip-text mb-2">
           Welcome back, {user?.user_metadata?.full_name || 'User'}
@@ -62,7 +187,7 @@ const DashboardPage = () => {
           </div>
           <div className="bg-gradient-to-br from-black/10 to-black/30 backdrop-blur-lg rounded-xl p-4 border border-white/5 group relative overflow-hidden">
             <p className="text-gray-400 text-sm font-medium mb-1">Available Credits</p>
-            <p className="text-white text-xl font-semibold group-hover:opacity-30 transition-all duration-300">...</p>
+            <p className="text-white text-xl font-semibold group-hover:opacity-30 transition-all duration-300">{userCredits}</p>
             
             {/* Hover overlay with dropdown animation */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -209,6 +334,7 @@ const DashboardPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

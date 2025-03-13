@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Block internal API routes from indexing
+Disallow: /api/
+
+# Sitemap location for better crawling and indexing
+Sitemap: https://neurolov.ai/sitemap.xml

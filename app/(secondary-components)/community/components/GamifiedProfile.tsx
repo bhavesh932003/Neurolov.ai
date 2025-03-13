@@ -13,7 +13,9 @@ import { useUser } from '@/app/auth/useUser';
 import toast from 'react-hot-toast';
 import { Confetti } from './Confetti';
 import { useQuestProgress } from '../hooks/useQuestsProgress';
+import { SocialShareModal } from '@/components/modals/SocialShareModal';
 import { parseJSON } from 'date-fns';
+import Image from 'next/image';
 
 interface ReferralSlot {
   isActive: boolean;
@@ -53,18 +55,27 @@ interface Quest {
   success: boolean;
   quests: Quest[];
   message?: string;
-  }
+}
+  
+interface ReferredUser {
+  referred_id: string;
+  earned_credits: number;
+  full_name: string;
+  avatar_url?: string;
 
-export const GamifiedProfile: React.FC = () => {
+}
+
+export const GamifiedProfile: React.FC = ({setIsShareModalOpen, setRefCode}: any) => {
   const { user, loading } = useUser();
   const {
     progressState, 
     clearAnimations,
     syncQuestsWithServer
   } = useQuestProgress()
+  const supabase = getSupabaseClient();
   const [activeTab, setActiveTab] = useState<'achievements' | 'referrals' | 'redeem' | 'collections'>('achievements');
   const [isExpanded, setIsExpanded] = useState(true);
-  const [referralCode, setReferralCode] = useState('');
+  const [referralCode, setReferralCode] = useState<string>('');
   const [isCopied, setIsCopied] = useState(false);
   const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([]);
   const [newRedeemCode, setNewRedeemCode] = useState('');
@@ -77,6 +88,8 @@ export const GamifiedProfile: React.FC = () => {
   const [showCreditAnimation, setShowCreditAnimation] = useState(false);
   const [creditAnimationValue, setCreditAnimationValue] = useState(0);
   const [progressPercentage, setProgressPercentage] = useState(0);
+  const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
+
 
 const [quests, setQuests] = useState<Quest[]>([]); 
   
@@ -111,13 +124,78 @@ const [quests, setQuests] = useState<Quest[]>([]);
     }
   }, [userProfile?.credits, userLevel, progressControls]);
 
+  useEffect(() => {
+    const fetchReferralCode = async () => {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('referral_code')
+            .eq('id', user?.id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching referral code:', error);
+            return;
+        }
+
+        if (data && data.referral_code) {
+          setReferralCode(data.referral_code);
+          setRefCode(data.referral_code)
+        }
+    };
+
+    fetchReferralCode();
+}, [user]);
+
+  
   // Generate referral code
-  const generateReferralCode = () => {
-    const timestamp = Date.now().toString(36);
-    const randomStr = Math.random().toString(36).substring(2, 8);
-    const code = `NEURO-${timestamp.slice(-4)}-${randomStr.toUpperCase()}`;
-    setReferralCode(code);
-  };
+  const generateReferralCode = async () => {
+    if (!user || !user.id) {
+      console.log("user is not awalable");
+      return;
+
+    };
+    const generateCode = () => {
+        const timestamp = Date.now().toString(36);
+        const randomStr = Math.random().toString(36).substring(2, 8);
+        return `NEURO-${timestamp.slice(-4)}-${randomStr.toUpperCase()}`;
+    };
+
+    let isUnique = false;
+    let code;
+
+    while (!isUnique) {
+        code = generateCode();
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('referral_code')
+            .eq('referral_code', code);
+
+        if (error) {
+            console.error('Error checking referral code:', error);
+            return;
+        }
+
+        if (data.length === 0) {
+            isUnique = true;
+        }
+    }
+
+    setReferralCode(code || "");
+    setRefCode(code || "")
+
+
+    // Now, set the generated referral code in the user's profile
+    const { data: updateData, error: updateError } = await supabase
+        .from('profiles')
+        .update({ referral_code: code })
+        .eq('id', user.id); // Assuming you have the user's ID stored in `userId`
+
+    if (updateError) {
+        console.error('Error updating profile with referral code:', updateError);
+    } else {
+        console.log('Referral code set successfully:', code);
+    }
+};
 
   // Copy referral code
   const copyReferralCode = async () => {
@@ -223,11 +301,7 @@ const [quests, setQuests] = useState<Quest[]>([]);
       return;
 
     };
-
-   
-    
     const fetchUserProfile = async () => {
-      const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -275,7 +349,6 @@ const [quests, setQuests] = useState<Quest[]>([]);
     if (!user || !user.id) return;
     
     const fetchRedeemHistory = async () => {
-      const supabase = getSupabaseClient();
       
       // Fetch redeem_history for the current user
       const { data: historyData, error: historyError } = await supabase
@@ -333,7 +406,6 @@ const [quests, setQuests] = useState<Quest[]>([]);
     if (!newRedeemCode.trim() || !user || isRedeeming) return;
     
     setIsRedeeming(true);
-    const supabase = getSupabaseClient();
     
     try {
      
@@ -611,9 +683,36 @@ const [quests, setQuests] = useState<Quest[]>([]);
   };
 
 
+  useEffect(() => {
+    if (loading || !user?.id) {
+      return;
+    }
+    
+    const fetchReferredUsers = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_referred_profiles', { 
+          referrer_user_id: user.id 
+        });
+        
+        if (error) {
+          console.error('Error fetching referred profiles:', error);
+          return;
+        }
+        
+        // If data is null or empty, set to empty array
+        setReferredUsers(data || []);
+      } catch (err) {
+        console.error('Unexpected error:', err);
+      }
+    };
+    
+    fetchReferredUsers();
+  }, [user, loading]);
+
 
   return (
     <div className="h-[calc(100vh-16rem)] flex flex-col relative">
+      
        <Confetti active={showConfetti} />
       {/* Level Up Animation Overlay */}
       <AnimatePresence>
@@ -809,125 +908,142 @@ const [quests, setQuests] = useState<Quest[]>([]);
                 {/* Content with individual scroll */}
                 <div className="flex-1 overflow-hidden">
                   <div className="h-full overflow-y-auto no-scrollbar">
-                    {activeTab === 'referrals' && (
-                      <div className="space-y-4">
-                        {/* Referral Code Generator */}
-                        <Card className="bg-black/20 border-blue-500/10">
-                          <div className="p-3 space-y-3">
-                            <h4 className="text-sm font-semibold text-white">Your Referral Code</h4>
-                            <div className="flex gap-2">
-                              <Input
-                                value={referralCode}
-                                readOnly
-                                placeholder="Generate your referral code"
-                                className="bg-black/20 border-blue-500/20 text-sm"
-                              />
-                              {!referralCode ? (
-                                <motion.div
-                                  whileTap={{ scale: 0.95 }}
-                                >
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={generateReferralCode}
-                                    className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400"
-                                  >
-                                    Generate
-                                  </Button>
-                                </motion.div>
-                              ) : (
-                                <motion.div whileTap={{ scale: 0.95 }}>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={copyReferralCode}
-                                    className={cn(
-                                      "min-w-[60px] relative overflow-hidden",
-                                      isCopied
-                                        ? "bg-green-500/20 hover:bg-green-500/30 text-green-400"
-                                        : "bg-blue-500/20 hover:bg-blue-500/30 text-blue-400"
-                                    )}
-                                  >
-                                    {isCopied && (
-                                      <motion.div
-                                        className="absolute inset-0 bg-green-500/20"
-                                        initial={{ x: "-100%" }}
-                                        animate={{ x: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                      />
-                                    )}
-                                    <span className="relative z-10">{isCopied ? "Copied!" : "Copy"}</span>
-                                  </Button>
-                                </motion.div>
-                              )}
-                            </div>
-                          </div>
-                        </Card>
+                  {activeTab === 'referrals' && (
+  <div className="space-y-4">
+    {/* Referral Code Generator */}
+    <Card className="bg-black/20 border-blue-500/10">
+      <div className="p-3 space-y-3">
+        <h4 className="text-sm font-semibold text-white">Your Referral Code</h4>
+        <div className="flex gap-2">
+          <Input
+            value={referralCode}
+            readOnly
+            placeholder="Generate your referral code"
+            className="bg-black/20 border-blue-500/20 text-sm"
+          />
+          {!referralCode ? (
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={generateReferralCode}
+                className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400"
+              >
+                Generate
+              </Button>
+            </motion.div>
+          ) : (
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={copyReferralCode}
+                className={cn(
+                  "min-w-[60px] relative overflow-hidden",
+                  isCopied
+                    ? "bg-green-500/20 hover:bg-green-500/30 text-green-400"
+                    : "bg-blue-500/20 hover:bg-blue-500/30 text-blue-400"
+                )}
+              >
+                {isCopied && (
+                  <motion.div
+                    className="absolute inset-0 bg-green-500/20"
+                    initial={{ x: "-100%" }}
+                    animate={{ x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                )}
+                <span className="relative z-10">{isCopied ? "Copied!" : "Copy"}</span>
+              </Button>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </Card>
 
-                        {/* Referral Slots */}
-                        <div className="space-y-2">
-                          {referralSlots.map((slot, index) => (
-                            <motion.div 
-                              key={index}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                            >
-                              <Card className="bg-black/20 border-blue-500/10">
-                                <div className="p-2">
-                                  {slot.isActive ? (
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-[1.5px]">
-                                          <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                                            <span className="text-xs font-bold text-white">U</span>
-                                          </div>
-                                        </div>
-                                        <div>
-                                          <p className="text-sm text-white">User Name</p>
-                                          <p className="text-xs text-gray-400">Level 1</p>
-                                        </div>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="text-sm text-green-400">+0 ₦</p>
-                                        <p className="text-xs text-gray-400">{slot.percentage}% earnings</p>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <motion.div 
-                                          className="w-8 h-8 rounded-full border-2 border-dashed border-blue-500/20 flex items-center justify-center"
-                                          animate={{ 
-                                            borderColor: ["rgba(59, 130, 246, 0.2)", "rgba(59, 130, 246, 0.4)", "rgba(59, 130, 246, 0.2)"],
-                                          }}
-                                          transition={{ duration: 2, repeat: Infinity }}
-                                        >
-                                          <Plus className="w-4 h-4 text-blue-400" />
-                                        </motion.div>
-                                        <div>
-                                          <p className="text-sm text-white">Empty Slot</p>
-                                          <p className="text-xs text-blue-400">{slot.percentage}% of earnings</p>
-                                        </div>
-                                      </div>
-                                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-7 text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
-                                        >
-                                          Invite
-                                        </Button>
-                                      </motion.div>
-                                    </div>
-                                  )}
-                                </div>
-                              </Card>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+    {/* Referral Slots */}
+    <div className="space-y-2">
+      {/* Render actual referred users first */}
+      {referredUsers.map((user, index) => (
+        <motion.div 
+          key={user.referred_id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+        >
+          <Card className="bg-black/20 border-blue-500/10">
+            <div className="p-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-[1.5px]">
+                    <div className="w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden">
+                      
+                      
+                        <span className="text-xs font-bold text-white">
+                          {user.full_name?.charAt(0) || 'U'}
+                        </span>
+                    
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-white">{user.full_name}</p>
+                    <p className="text-xs text-gray-400">Referred User</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-green-400">+{user.earned_credits} ₦</p>
+                  <p className="text-xs text-gray-400">Referral Earnings (10%)</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      ))}
+
+      {/* Fill remaining slots with empty invites */}
+      {[...Array(Math.max(4 - referredUsers.length, 0))].map((_, index) => (
+        <motion.div 
+          key={`empty-slot-${index}`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+        >
+          <Card className="bg-black/20 border-blue-500/10">
+            <div className="p-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <motion.div 
+                    className="w-8 h-8 rounded-full border-2 border-dashed border-blue-500/20 flex items-center justify-center"
+                    animate={{ 
+                      borderColor: ["rgba(59, 130, 246, 0.2)", "rgba(59, 130, 246, 0.4)", "rgba(59, 130, 246, 0.2)"],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Plus className="w-4 h-4 text-blue-400" />
+                  </motion.div>
+                  <div>
+                    <p className="text-sm text-white">Empty Slot</p>
+                    <p className="text-xs text-blue-400">Invite a friend</p>
+                  </div>
+                </div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
+                    onClick={() => setIsShareModalOpen(true)}
+                  >
+                    Invite
+                  </Button>
+                </motion.div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      ))}
+    </div>
+  </div>
+)}
 
 {activeTab === 'achievements' && (
   <div className="space-y-4">
