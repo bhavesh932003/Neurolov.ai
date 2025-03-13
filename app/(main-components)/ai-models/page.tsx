@@ -61,7 +61,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 // Import Badge from your UI components (adjust the path as needed)
 import { Badge } from '@/components/ui/badge';
 
-const DEV_EMAILS = ['nitishmeswal@gmail.com', 'neohex262@gmail.com', 'neurolov.ai@gmail.com', 'jprateek961@gmail.com', 'aitipamulaprapitesh02@gmail.com', 'fackidacc084@gmail.com','bhaveshshukla2003@gmail.com'];
+const DEV_EMAILS = ['nitishmeswal@gmail.com', 'neohex262@gmail.com', 'neurolov.ai@gmail.com', 'jprateek961@gmail.com', 'aitipamulaprapitesh02@gmail.com', 'fackidacc084@gmail.com', ];
 
 interface DeployedContainer {
   id: string;

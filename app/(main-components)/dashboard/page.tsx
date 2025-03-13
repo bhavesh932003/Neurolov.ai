@@ -1,14 +1,13 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/app/auth/useUser';
+import styles from './styles.module.scss';
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
-import { getSupabaseClient } from "@/app/auth/supabase";
-import styles from './styles.module.scss';
 
 const BetaTag = () => (
   <Badge 
@@ -23,31 +22,10 @@ const DashboardPage = () => {
   const router = useRouter();
   const { user, loading } = useUser();
   const [mounted, setMounted] = useState(false);
-  const [plan, setPlan] = useState(""); 
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (user) {
-      const fetchPlan = async () => {
-        const { data, error } = await getSupabaseClient()
-          .from('profiles')
-          .select('plan')
-          .eq('id', user.id)
-          .single();
-        if (error) {
-          console.error("Error fetching plan:", error);
-          setPlan("free");
-        } else {
-          setPlan(data?.plan || "free");
-        }
-      };
-
-      fetchPlan();
-    }
-  }, [user]);
 
   if (!mounted) return null;
 
@@ -80,11 +58,13 @@ const DashboardPage = () => {
         <div className="flex gap-8 mt-6">
           <div className="bg-gradient-to-br from-black/10 to-black/30 backdrop-blur-lg rounded-xl p-4 border border-white/5">
             <p className="text-gray-400 text-sm font-medium mb-1">Current Plan</p>
-            <p className="text-white text-xl font-semibold">{plan || "free"}</p>
+            <p className="text-white text-xl font-semibold">free</p>
           </div>
           <div className="bg-gradient-to-br from-black/10 to-black/30 backdrop-blur-lg rounded-xl p-4 border border-white/5 group relative overflow-hidden">
             <p className="text-gray-400 text-sm font-medium mb-1">Available Credits</p>
             <p className="text-white text-xl font-semibold group-hover:opacity-30 transition-all duration-300">...</p>
+            
+            {/* Hover overlay with dropdown animation */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
               <div className="transform translate-y-[-100%] group-hover:translate-y-0 transition-transform duration-300 ease-out">
                 <Button
@@ -100,6 +80,7 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* AI Models */}
         <div className="group relative transform hover:-translate-y-1 transition-all duration-300">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-[#40A6FF] to-[#2D63FF] rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
           <Card className="relative bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-xl border-white/5 hover:border-white/10 transition-all duration-300">
@@ -148,6 +129,8 @@ const DashboardPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* GPU Marketplace */}
         <div className="group relative">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-[#40A6FF] to-[#2D63FF] rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
           <Card className="relative bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-xl border-white/5 hover:border-white/10 transition-all duration-300">
@@ -168,6 +151,8 @@ const DashboardPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Connect to Earn */}
         <div className="group relative transform hover:-translate-y-1 transition-all duration-300">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-[#40A6FF] to-[#2D63FF] rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
           <Card className="relative bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-xl border-white/5 hover:border-white/10 transition-all duration-300">
@@ -194,6 +179,8 @@ const DashboardPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* NodeNet */}
         <div className="group relative transform hover:-translate-y-1 transition-all duration-300">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-[#40A6FF] to-[#2D63FF] rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
           <Card className="relative bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-xl border-white/5 hover:border-white/10 transition-all duration-300">
