@@ -7,7 +7,7 @@ import { GamifiedProfile } from './GamifiedProfile';
 import { NewsFeed } from './NewsFeed';
 import { UserCircle2, Newspaper } from 'lucide-react';
 
-export const ProfileNewsFeed: React.FC = () => {
+export const ProfileNewsFeed: React.FC = ({setRefCode, setIsShareModalOpen} : any) => {
   const [showProfile, setShowProfile] = useState(true);
 
   return (
@@ -95,7 +95,7 @@ export const ProfileNewsFeed: React.FC = () => {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
                       />
-                      <GamifiedProfile />
+                      <GamifiedProfile setIsShareModalOpen={setIsShareModalOpen} setRefCode={setRefCode} />
                     </div>
                   </motion.div>
                 ) : (
