@@ -52,6 +52,18 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        {/* Google Tag Manager */}
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-FQDR1HDD3K" />
+        <Script id="google-analytics">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-FQDR1HDD3K');
+          `}
+        </Script>
+      </head>
       <body className={localInter.variable}>
         <ThemeProvider
           attribute="class"

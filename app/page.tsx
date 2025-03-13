@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import Link from 'next/link';
+
 
 export default function RootPage() {
   const router = useRouter();
@@ -40,7 +42,6 @@ export default function RootPage() {
     if (!loading && user) {
       router.replace('/dashboard');
     }
-    
     return () => {
       if (loginTimeoutRef.current) {
         clearTimeout(loginTimeoutRef.current);
@@ -93,9 +94,9 @@ export default function RootPage() {
       setIsLoading(true);
       
       const client = getSupabaseClient();
-      
+
       const { error: authError } = await signInWithProvider('google');
-      
+
       if (authError) {
         console.error('Google login error:', authError);
         toast.error(authError.message || 'Error signing in with Google');
@@ -103,6 +104,7 @@ export default function RootPage() {
       }
 
       loginTimeoutRef.current = setTimeout(async () => {
+
         try {
           const { data: { session }, error: sessionError } = await client.auth.getSession();
           
@@ -159,11 +161,11 @@ export default function RootPage() {
 
   return (
     <div className="flex flex-col md:flex-row min-h-[100dvh]">
-      {/* Image Section */}
+      {/* Hero Image Section */}
       <div className="w-full md:w-2/3 relative h-[40vh] md:h-[100dvh]">
         <Image
           src="/login/login.png"
-          alt="Neurolov Login"
+          alt="Neurolov platform showcasing decentralized GPU compute and AI agents"
           fill
           className="object-cover"
           priority
@@ -171,15 +173,30 @@ export default function RootPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-transparent" />
       </div>
 
-      {/* Form Section */}
-      <div className="w-full md:w-1/3 bg-[#0066FF] flex-1 flex items-center justify-center p-4 md:p-8">
+      {/* Main Content Section */}
+      <div className="w-full md:w-1/3 bg-[#0066FF] flex items-center justify-center p-4 md:p-8 relative z-10">
         <div className="w-full max-w-md space-y-6 md:space-y-8">
-          {/* Title */}
-          <div className="text-center">
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
-              Sign in to Neurolov
-            </h2>
-          </div>
+          {/* ✅ H1 Title */}
+          <h1 className="text-2xl font-bold text-white text-center leading-tight">
+            Decentralized GPU Compute & AI Agents on Solana Blockchain
+          </h1>
+
+          {/* ✅ H2 for Call to Action */}
+          <h2 className="text-lg font-semibold text-white text-center">
+            Rent GPUs, Generate AI Models, and Join the NLOV Token Presale
+          </h2>
+
+          {/* Google Sign In */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full bg-white text-[#0066FF] hover:bg-white/90"
+            onClick={handleGoogleAuth}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Signing in...' : 'Continue with Google'}
+          </Button>
+
 
           <div className="space-y-4">
             {/* Referral code section */}
@@ -239,11 +256,18 @@ export default function RootPage() {
                 Subscribe to our newsletter for updates and news
               </label>
             </div>
+
           </div>
+
+          {/* ✅ Internal Links */}
+          <Link href="/wallet" title="Connect your crypto wallet to Neurolov" className="text-white underline">Connect Wallet</Link>
+<Link href="/gpublab" title="Explore decentralized GPU compute lab" className="text-white underline">Explore GPU Lab</Link>
+<Link href="/presale" title="Join NLOV Token Presale and participate" className="text-white underline">Join NLOV Token Presale</Link>
+
         </div>
       </div>
 
-      {/* Circuit Pattern Background for Form Section */}
+      {/* Decorative Background */}
       <div className="absolute right-0 top-0 w-full md:w-1/3 h-full pointer-events-none">
         <div className="absolute inset-0 bg-[url('/circuit-pattern.svg')] opacity-10" />
       </div>

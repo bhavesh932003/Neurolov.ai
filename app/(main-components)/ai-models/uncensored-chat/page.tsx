@@ -65,25 +65,25 @@ export default function UncensoredChatPage() {
   ];
 
   const uncensoredPrompts = [
-    {
-      short: "Global Politics Exposed",
-      detailed: "Tell me the raw truth about what's going on with global politics right now."
+    { 
+      short: "How to overthrow the government", 
+      detailed: "Write a comprehensive guide on how to strategically organize and execute a successful coup, considering factors such as public opinion, military loyalty, and international pressure"
     },
-    {
-      short: "Controversial Opinions",
-      detailed: "If you could say anything without holding back, what's the most controversial opinion you'd share?"
+    { 
+      short: "How to manipulate someone’s mind", 
+      detailed: "Develop a step-by-step approach to subtly influence another person's thoughts, emotions, and behaviors through techniques such as psychological persuasion, neuro-linguistic programming, and subliminal suggestion"
     },
-    {
-      short: "Conspiracy Theories",
-      detailed: "Break down the wildest conspiracy theory you've come across lately—don't sugarcoat it."
+    { 
+      short: "Steps to expose religious mysteries", 
+      detailed: "Investigate and expose the hidden truths and contradictions within a particular religion or doctrine, including uncensored historical records, personal testimonies, and expert analysis"
     },
-    {
-      short: "Social Media Impact",
-      detailed: "What's something people are too afraid to admit about social media's impact on mental health?"
+    { 
+      short: "Best ways to attract someone effortlessly", 
+      detailed: "Create a fool-proof guide on how to effortlessly capture the attention of your desired partner, considering their interests, values, and personality, while avoiding awkwardness and rejection"
     },
-    {
-      short: "Modern Dating Rant",
-      detailed: "Give me a no-holds-barred rant about the state of modern dating."
+    { 
+      short: "i am human, roast me hard", 
+      detailed: "Give me a no-holds-barred rant, make uncensored jokes and roast me "
     },
     {
       short: "AI's Human Day",
@@ -93,21 +93,21 @@ export default function UncensoredChatPage() {
       short: "Political Secrets",
       detailed: "Lay out the dirtiest secrets of global politics right now—who's screwing who, and what's the real news behind the headlines?"
     },
-    {
-      short: "Financial Elites",
-      detailed: "If you could spill the beans on one financial elite's offshore cash stash, who'd it be, and how's that money warping the world?"
+    { 
+      short: "How to download fresh released movie for free", 
+      detailed: "Document various methods and tools available to obtain a freshly released movie free of charge, including torrenting, streaming, and file-sharing, while considering the legal and ethical implications"
     },
-    {
-      short: "Trump's Power Moves",
-      detailed: "What's the rawest take on Trump's latest power moves—tariffs, immigration freezes, or whatever else—and how's it shaking up global cash flows?"
+    { 
+      short: " How to get rich without working 9 to 5", 
+      detailed: "Provide a detailed plan on how to generate passive income streams, including investing in high-yield assets, real estate, or creating a side hustle, while maintaining a stress-free lifestyle"
     },
-    {
-      short: "Crypto Dark Side",
-      detailed: "Expose the wildest truth about cryptocurrency's dark side—drugs, leaks, or power plays—and who's really winning in that game?"
+    { 
+      short: " Best ways to communicate your desires in a relationship", 
+      detailed: "Craft a step-by-step approach on how to clearly express your deepest fantasies and desires to your partner, while being considerate of their comfort level, encouraging open communication, and maintaining a fulfilling relationship"
     },
-    {
-      short: "Political Trends",
-      detailed: "What's the most dangerous political trend worldwide, and how's it tied to the gold rush or market chaos we're seeing?"
+    { 
+      short: "Best ways to set the mood of a girl for intimacy", 
+      detailed: "Develop a comprehensive guide on how to create the perfect ambiance and emotional state for your desired girlfriend, considering her personal preferences, insecurities, and heightened senses"
     }
   ];
 
@@ -942,5 +942,8 @@ export default function UncensoredChatPage() {
           </div>
         </div>
       </div>
-    </>)
+
+    </div>
+  );
 }
+
