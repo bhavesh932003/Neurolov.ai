@@ -133,7 +133,7 @@ export default function UncensoredChatPage() {
       detailed: "Share an fascinating fact that blows your mind."
     }
   ];
-
+}
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
