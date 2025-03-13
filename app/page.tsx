@@ -51,26 +51,26 @@ export default function RootPage() {
 
   const applyReferralCode = async () => {
     if (!inputReferralCode.trim()) return;
-    
+
     try {
       setIsLoadingReferral(true);
       const client = getSupabaseClient();
-      
-      const { data, error } = await client.rpc('is_referral_code_exists', { 
-        check_referral_code: inputReferralCode.trim() 
+
+      const { data, error } = await client.rpc('is_referral_code_exists', {
+        check_referral_code: inputReferralCode.trim()
       });
-      
+
       if (error) {
         console.error('Error checking referral code:', error);
         toast.error('Error validating referral code');
         return;
       }
-      
+
       if (!data || data === false) {
         toast.error('Invalid referral code');
         return;
       }
-      
+
       setReferralCode(inputReferralCode.trim());
       localStorage.setItem('referralCode', inputReferralCode.trim());
       toast.success("Referral code applied successfully!");
@@ -92,7 +92,7 @@ export default function RootPage() {
     try {
       loginAttemptRef.current = true;
       setIsLoading(true);
-      
+
       const client = getSupabaseClient();
 
       const { error: authError } = await signInWithProvider('google');
@@ -107,7 +107,7 @@ export default function RootPage() {
 
         try {
           const { data: { session }, error: sessionError } = await client.auth.getSession();
-          
+
           if (sessionError) {
             console.error('Session error:', sessionError);
             return;
@@ -122,9 +122,9 @@ export default function RootPage() {
                 },
                 body: JSON.stringify({ email: session.user.email }),
               });
-              
+
               const data = await response.json();
-              
+
               if (!response.ok) {
                 console.error('Newsletter subscription failed:', data.error);
                 toast.error(data.error || 'Failed to subscribe to newsletter');
@@ -136,14 +136,14 @@ export default function RootPage() {
               toast.error('Failed to subscribe to newsletter');
             }
           }
-          
+
           router.replace('/dashboard');
         } catch (error: any) {
           console.error('Session error:', error);
           toast.error(error.message || 'Error getting session');
         }
       }, 1000);
-      
+
     } catch (error: any) {
       console.error('Auth error:', error);
       toast.error(error.message || 'Error during authentication');
@@ -185,24 +185,11 @@ export default function RootPage() {
           <h2 className="text-lg font-semibold text-white text-center">
             Rent GPUs, Generate AI Models, and Join the NLOV Token Presale
           </h2>
-
-          {/* Google Sign In */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full bg-white text-[#0066FF] hover:bg-white/90"
-            onClick={handleGoogleAuth}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Signing in...' : 'Continue with Google'}
-          </Button>
-
-
           <div className="space-y-4">
             {/* Referral code section */}
             {!referralCode &&
               <div className="text-center">
-                <button 
+                <button
                   onClick={toggleReferralInput}
                   className="text-sm text-white underline hover:text-white/80"
                 >
@@ -221,14 +208,14 @@ export default function RootPage() {
                   onChange={(e) => setInputReferralCode(e.target.value)}
                   className="bg-white text-[#0066FF]"
                 />
-                <Button 
-  onClick={applyReferralCode}
-  className="bg-white text-[#0066FF] hover:bg-white/90"
-  size="sm"
-  disabled={isLoadingReferral}
->
-  {isLoadingReferral ? 'Checking...' : 'Apply'}
-</Button>
+                <Button
+                  onClick={applyReferralCode}
+                  className="bg-white text-[#0066FF] hover:bg-white/90"
+                  size="sm"
+                  disabled={isLoadingReferral}
+                >
+                  {isLoadingReferral ? 'Checking...' : 'Apply'}
+                </Button>
               </div>
             )}
 
@@ -242,27 +229,32 @@ export default function RootPage() {
               {isLoading ? 'Signing in...' : 'Continue with Google'}
             </Button>
 
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="newsletter"
-                checked={subscribed}
-                onCheckedChange={(checked) => setSubscribed(checked as boolean)}
-                className="border-white data-[state=checked]:bg-white data-[state=checked]:text-[#0066FF] mt-1"
-              />
-              <label
-                htmlFor="newsletter"
-                className="text-sm text-white leading-tight"
-              >
-                Subscribe to our newsletter for updates and news
-              </label>
-            </div>
-
           </div>
+
+
+
+          <div className="flex items-start space-x-2">
+            <Checkbox
+              id="newsletter"
+              checked={subscribed}
+              onCheckedChange={(checked) => setSubscribed(checked as boolean)}
+              className="border-white data-[state=checked]:bg-white data-[state=checked]:text-[#0066FF] mt-1"
+            />
+            <label
+              htmlFor="newsletter"
+              className="text-sm text-white leading-tight"
+            >
+              Subscribe to our newsletter for updates and news
+            </label>
+          </div>
+
+
+
 
           {/* ✅ Internal Links */}
           <Link href="/wallet" title="Connect your crypto wallet to Neurolov" className="text-white underline">Connect Wallet</Link>
-<Link href="/gpublab" title="Explore decentralized GPU compute lab" className="text-white underline">Explore GPU Lab</Link>
-<Link href="/presale" title="Join NLOV Token Presale and participate" className="text-white underline">Join NLOV Token Presale</Link>
+          <Link href="/gpublab" title="Explore decentralized GPU compute lab" className="text-white underline">Explore GPU Lab</Link>
+          <Link href="/presale" title="Join NLOV Token Presale and participate" className="text-white underline">Join NLOV Token Presale</Link>
 
         </div>
       </div>
