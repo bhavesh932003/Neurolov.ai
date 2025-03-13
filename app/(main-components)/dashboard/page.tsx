@@ -26,75 +26,87 @@ const DashboardPage = () => {
   const { user, loading } = useUser();
   const [showWelcomeModal, setShowWelcomeModal] = useState(true);
   const [userCredits, setUserCredits] = useState(0);
-  const [referralCode, setReferralCode] = useState('')
 
+  const [mounted, setMounted] = useState(false);
+  const [referralProcessed, setReferralProcessed] = useState(false);
 
-  const processReferral = async (userId: string) => {
-
-    if (!referralCode) return;
+  // Process referral function
+  const processReferral = async (userId : string) => {
+    
+    const referralCode = localStorage.getItem("referralCode");
+    if (!referralCode) return false;
     
     try {
       const client = getSupabaseClient();
       
-  
       const { data, error } = await client.rpc('create_referral_relationship', { 
         referred_user_id: userId,
         ref_referral_code: referralCode
       });
       
-  
       if (error) {
-        toast.error('Failed to process referral', {
-          description: error.message || 'An unexpected error occurred'
-        });
-        return;
+  
+        if (!error.message.includes('duplicate key value violates unique constraint')) {
+          toast.error('Failed to process referral', {
+            description: error.message || 'An unexpected error occurred'
+          });
+        } else {
+        toast.success('Referral processed successfully');
+
+        localStorage.removeItem('referralCode');
+        }
+        return false;
       }
-      
       
       if (data) {
         toast.success('Referral processed successfully');
-        
-        
         localStorage.removeItem('referralCode');
-        setReferralCode('');
+
+        return true;
       }
       
+      return false;
     } catch (error) {
-     
       console.error('Referral processing error:', error);
       toast.error('An unexpected error occurred while processing referral');
+      return false;
     }
   };
-  
 
+  
   useEffect(() => {
-   
-    if (user?.id && referralCode) {
-      const processReferralFunc = async () => {
-        await processReferral(user.id);
+    setMounted(true);
+    
+    if (user && user.id && !referralProcessed) {
+      const fetchUserDataAndProcessReferral = async () => {
+
+        if (localStorage.getItem("referralCode")) {
+          const success = await processReferral(user.id);
+          if (success) {
+            setReferralProcessed(true);
+          }
+        }
+        
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('credits')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching credits:', error);
+          return;
+        }
+        
+        if (data) {
+          setUserCredits(data.credits);
+        }
       };
-  
-      processReferralFunc();
+      
+      fetchUserDataAndProcessReferral();
     }
-  }, [user?.id, referralCode]);
-
-  useEffect(() => {
-    if (!user || !user.id) {
-      console.log("user is not awalable");
-      return;
-    };
-    const createRelationWithReferrals = async () => {
-      await processReferral(user?.id)
-    }
-
-    if (referralCode && user) {
-    console.log("creating relatin with referals");
-
-      createRelationWithReferrals()
-    console.log("created relatin with referals");
-
-   }else return
-  }, [referralCode, user])
+  }, [user, referralProcessed]);
 
 
 const welcome_user = [
@@ -123,42 +135,9 @@ const welcome_user = [
 ];
 
 
-  const [mounted, setMounted] = useState(false);
 
 
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-    useEffect(() => {
-      if (!user || !user.id) {
-        console.log("user is not awalable");
-        return;
-  
-      };
-  
-      const fetchUserProfile = async () => {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('credits')
-          .eq('id', user.id)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching credits:', error);
-          return;
-        }
-        
-        if (data) {
-         setUserCredits(data.credits)
-        }
-      };
-      
-      fetchUserProfile();
-    }, [user]);
-  
 
 
   if (!mounted) return null;
