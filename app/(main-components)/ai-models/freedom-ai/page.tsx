@@ -405,7 +405,7 @@ export default function FreedomAiPage() {
         messagesToSend.push(fileMessage);
       }
 
-      const endpoint = isCensored ? '/api/censored-chat' : '/api/freedom-ai';
+      const endpoint = isCensored ? '/api/censored-chat' : '/api/uncensored-chat';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -450,7 +450,7 @@ export default function FreedomAiPage() {
     const contextMessages = messages.slice(0, userMessageIndex + 1);
     setIsGenerating(true);
     try {
-      const endpoint = isCensored ? '/api/censored-chat' : '/api/freedom-ai';
+      const endpoint = isCensored ? '/api/censored-chat' : '/api/uncensored-chat';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
