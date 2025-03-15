@@ -384,8 +384,8 @@ export default function AIModelsPage() {
         return;
       }
 
-      if (model.id === 'uncensored-chat') {
-        router.push('/ai-models/uncensored-chat');
+      if (model.id === 'freedom-ai') {
+        router.push('/ai-models/freedom-ai');
         return;
       }
 
@@ -523,7 +523,7 @@ export default function AIModelsPage() {
               )}
 
               {/* Coming Soon Overlay */}
-              {!['neurolov-image', 'uncensored-chat'].includes(model.id) && !isDev && (
+              {!['neurolov-image', 'freedom-ai'].includes(model.id) && !isDev && (
                 <div className="absolute inset-0 z-40 backdrop-blur-md bg-black/50 flex items-center justify-center">
                   <div className="text-center">
                     <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
@@ -542,7 +542,7 @@ export default function AIModelsPage() {
                   src={`/ai-models/${model.id === 'neurolov-image' ? 'neuro image' :
                     model.id === 'text-to-video' || model.id === 'video' ? 'text to video' :
                       model.id === 'music-ai' ? 'text to music' :
-                        model.id === 'uncensored-chat' ? 'freedom ai' :
+                        model.id === 'freedom-ai' ? 'freedom ai' :
                           model.id === 'text-to-3d' ? 'text to 3d' :
                             model.id === 'deepfake' ? 'deepfake' :
                               'neuro image'}.png`}
@@ -577,8 +577,8 @@ export default function AIModelsPage() {
                 <div className="flex items-center justify-between pt-2 border-t border-gray-800">
                   <Button
                     onClick={() => handleAddToBag(model)}
-                    disabled={!isDev && !['neurolov-image', 'uncensored-chat'].includes(model.id)}
-                    className={`inline-flex items-center gap-1 ${!isDev && !['neurolov-image', 'uncensored-chat'].includes(model.id) ? 'bg-gray-600 cursor-not-allowed' : 'bg-[#0066FF] hover:bg-[#0052CC]'} text-white px-4 py-2 rounded-full text-sm transition-colors`}
+                    disabled={!isDev && !['neurolov-image', 'freedom-ai'].includes(model.id)}
+                    className={`inline-flex items-center gap-1 ${!isDev && !['neurolov-image', 'freedom-ai'].includes(model.id) ? 'bg-gray-600 cursor-not-allowed' : 'bg-[#0066FF] hover:bg-[#0052CC]'} text-white px-4 py-2 rounded-full text-sm transition-colors`}
                   >
                     Launch App
                     <ArrowRight className="w-4 h-4" />
@@ -608,7 +608,7 @@ export default function AIModelsPage() {
                   src={`/ai-models/${container.model_name === 'neurolov-image' ? 'neuro image' :
                     container.model_name === 'text-to-video' || container.model_name === 'video' ? 'text to video' :
                       container.model_name === 'music-ai' ? 'text to music' :
-                        container.model_name === 'uncensored-chat' ? 'freedom ai' :
+                        container.model_name === 'freedom-ai' ? 'freedom ai' :
                           container.model_name === 'text-to-3d' ? 'text to 3d' :
                             container.model_name === 'deepfake' ? 'deepfake' :
                               'neuro image'}.png`}

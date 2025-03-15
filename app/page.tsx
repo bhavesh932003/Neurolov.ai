@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import { feature_flags } from '@/utils/featureFlags';
 
 
 export default function RootPage() {
@@ -162,9 +163,9 @@ export default function RootPage() {
   return (
     <div className="flex flex-col md:flex-row min-h-[100dvh]">
       {/* Hero Image Section */}
-      <div className="w-full md:w-2/3 relative h-[40vh] md:h-[100dvh]">
+      <div className="w-full md:w-1/2 relative h-[50vh] md:h-[100dvh]">
         <Image
-          src="/login/login.png"
+          src="/login/login-bg-2.jpg"
           alt="Neurolov platform showcasing decentralized GPU compute and AI agents"
           fill
           className="object-cover"
@@ -174,32 +175,36 @@ export default function RootPage() {
       </div>
 
       {/* Main Content Section */}
-      <div className="w-full md:w-1/3 bg-[#0066FF] flex items-center justify-center p-4 md:p-8 relative z-10">
-        <div className="w-full max-w-md space-y-6 md:space-y-8">
-          {/* ✅ H1 Title */}
-          <h1 className="text-2xl font-bold text-white text-center leading-tight">
-            Decentralized GPU Compute & AI Agents on Solana Blockchain
+      <div className="w-full md:w-1/2 bg-[#0066FF] flex items-center h-[50vh] md:h-[100dvh] justify-center p-4 md:p-8 relative z-10">
+        <div className="w-full max-w-lg space-y-4 md:space-y-6 px-4">
+
+          {/* <h1 className="text-2xl md:text-3xl font-bold text-white text-center leading-tight">
+          Decentralized GPU Compute & AI Agents on Solana Blockchain
+        </h1>
+  
+      
+        <h2 className="text-lg md:text-xl font-semibold text-white text-center">
+          Rent GPUs, Generate AI Models, and Join the NLOV Token Presale
+        </h2> */}
+          <h1 className='text-2xl md:text-3xl font-bold text-white text-center leading-tight'>
+            Sign in to Neurolov
           </h1>
 
-          {/* ✅ H2 for Call to Action */}
-          <h2 className="text-lg font-semibold text-white text-center">
-            Rent GPUs, Generate AI Models, and Join the NLOV Token Presale
-          </h2>
           <div className="space-y-4">
             {/* Referral code section */}
-            {!referralCode &&
-              <div className="text-center">
+            {feature_flags.refferalOnSignIn &&  !referralCode &&
+              (<div className="text-center">
                 <button
                   onClick={toggleReferralInput}
                   className="text-sm text-white underline hover:text-white/80"
                 >
                   {showReferralInput ? "Hide referral input" : "Have a referral code?"}
                 </button>
-              </div>
+              </div>)
             }
 
             {/* Referral input field */}
-            {showReferralInput && !referralCode && (
+            { feature_flags.refferalOnSignIn && showReferralInput && !referralCode && (
               <div className="flex space-x-2">
                 <Input
                   type="text"
@@ -222,46 +227,43 @@ export default function RootPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full bg-white text-[#0066FF] hover:bg-white/90"
+              className="w-full bg-white text-[#0066FF] hover:bg-white/90 py-6"
               onClick={handleGoogleAuth}
               disabled={isLoading}
             >
               {isLoading ? 'Signing in...' : 'Continue with Google'}
             </Button>
-
           </div>
 
-
-
-          <div className="flex items-start space-x-2">
+          <div className="flex items-start space-x-2 ml-1">
             <Checkbox
               id="newsletter"
               checked={subscribed}
+            
               onCheckedChange={(checked) => setSubscribed(checked as boolean)}
               className="border-white data-[state=checked]:bg-white data-[state=checked]:text-[#0066FF] mt-1"
             />
             <label
               htmlFor="newsletter"
-              className="text-sm text-white leading-tight"
+              className="text-sm text-white leading-tight mt-[3px]"
             >
               Subscribe to our newsletter for updates and news
             </label>
           </div>
 
-
-
-
-          {/* ✅ Internal Links */}
-          <Link href="/wallet" title="Connect your crypto wallet to Neurolov" className="text-white underline">Connect Wallet</Link>
-          <Link href="/gpublab" title="Explore decentralized GPU compute lab" className="text-white underline">Explore GPU Lab</Link>
-          <Link href="/presale" title="Join NLOV Token Presale and participate" className="text-white underline">Join NLOV Token Presale</Link>
-
+          {/* Internal Links */}
+          {/* <div className="flex flex-col md:flex-row justify-center space-y-2 md:space-y-0 md:space-x-4 pt-4">
+            <Link href="/wallet" title="Connect your crypto wallet to Neurolov" className="text-white underline text-center">Connect Wallet</Link>
+            <Link href="/gpublab" title="Explore decentralized GPU compute lab" className="text-white underline text-center">Explore GPU Lab</Link>
+            <Link href="/presale" title="Join NLOV Token Presale and participate" className="text-white underline text-center">Join NLOV Token Presale</Link>
+          </div> */}
         </div>
       </div>
+      
 
-      {/* Decorative Background */}
-      <div className="absolute right-0 top-0 w-full md:w-1/3 h-full pointer-events-none">
-        <div className="absolute inset-0 bg-[url('/circuit-pattern.svg')] opacity-10" />
+      {/* Decorative Background - Adjusted to cover half the screen */}
+      <div className="absolute right-0 top-0 w-full md:w-1/2 h-full pointer-events-none">
+        <div className="absolute inset-0 bg-[url('/circuit-pattern.svg')] opacity-10 z-10" />
       </div>
     </div>
   );

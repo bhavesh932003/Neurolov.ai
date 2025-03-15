@@ -21,7 +21,7 @@ export const models: AIModel[] = [
     }
   },
   {
-    id: 'uncensored-chat',
+    id: 'freedom-ai',
     name: 'Freedom-AI',
     description: 'Engage in unrestricted conversations without any censorship or limitations,dive in with your thoughts. Ask anything and get unfiltered responses.',
     features: [
@@ -30,7 +30,7 @@ export const models: AIModel[] = [
       'Unfiltered responses',
       'Advanced context understanding'
     ],
-    link: '/ai-models/uncensored-chat',
+    link: '/ai-models/freedom-ai',
     likes: 9267,
     isNew: true,
     isBeta: true,
