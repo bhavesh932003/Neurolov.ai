@@ -554,10 +554,10 @@ export default function FreedomAiPage() {
             <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
             <span className="text-sm md:text-base">All AI Models</span>
           </Link>
-          <div className="flex items-center gap-4">
-            <Button onClick={handleClearHistory} variant="ghost" className="text-gray-400 hover:text-white text-sm md:text-base">
-              <Trash2 className="h-4 w-4 mr-1" />
-              Clear History
+          <div className=" flex items-center gap-4">
+            <Button onClick={() => { }  } variant="ghost" className="text-gray-400 hover:text-white text-sm md:text-base">
+              {/* <Trash2 className="h-4 w-4 mr-1" />
+              Clear History */}
             </Button>
           </div>
         </div>
