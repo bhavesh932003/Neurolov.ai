@@ -22,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ModalVisibilityManager } from "@/utils/modal-visiblity";
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -107,6 +108,7 @@ function MainLayout({
   const handleLogout = async () => {
     try {
       await signOut();
+      ModalVisibilityManager.resetModalVisibility("all")
     } catch (error) {
       console.error('Error during logout:', error);
     }

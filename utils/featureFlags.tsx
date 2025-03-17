@@ -3,5 +3,5 @@ export type FeatureFlags = {
   }
   
   export const feature_flags: FeatureFlags = {
-    refferalOnSignIn: false
+    refferalOnSignIn: true
   }

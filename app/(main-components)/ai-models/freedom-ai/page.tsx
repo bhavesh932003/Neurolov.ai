@@ -21,6 +21,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { getSupabaseClient } from '@/app/auth/supabase';
 import { useRouter } from 'next/navigation';
 import { CgMenuMotion } from "react-icons/cg";
+import { useTimeSpentTracker } from '@/app/(secondary-components)/community/hooks/useTimeTrack';
 
 interface Message {
   id?: string;
@@ -160,6 +161,8 @@ export default function FreedomAiPage() {
     }
     return [uncensoredSystemMessage];
   });
+
+  
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSamplePrompts, setShowSamplePrompts] = useState(true);
@@ -518,7 +521,18 @@ export default function FreedomAiPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [menuOpenIndex]);
 
-  // Update system message when censorship mode changes.
+  const { timeSpent, isComplete, progress, resetTimeSpent } = useTimeSpentTracker({
+    targetDuration: 120,
+    messageType: "usage",
+    onComplete: () => {
+      console.log("Quest completed and backend updated!");
+    }
+    
+  });
+
+  console.log(timeSpent);
+
+
   useEffect(() => {
     setMessages(prev => {
       const newSystemMessage: Message = isCensored

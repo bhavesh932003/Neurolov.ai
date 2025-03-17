@@ -70,7 +70,8 @@ export const GamifiedProfile: React.FC = ({setIsShareModalOpen, setRefCode}: any
   const {
     progressState, 
     clearAnimations,
-    syncQuestsWithServer
+    syncQuestsWithServer,
+    updateQuestProgress
   } = useQuestProgress()
   const supabase = getSupabaseClient();
   const [activeTab, setActiveTab] = useState<'achievements' | 'referrals' | 'redeem' | 'collections'>('achievements');
@@ -682,6 +683,22 @@ const [quests, setQuests] = useState<Quest[]>([]);
     return "";
   };
 
+  async function updateQuestProgressApi() {
+    if (!user) {
+      return;
+    }
+    const { data, error } = await supabase.rpc("update_quest_progress", {
+      action_value: 100,
+      user_uuid: user.id,
+      message_type: "referral",
+    });
+    if (error) {
+      console.error("Error updating quest progress:", error);
+      return;
+    }
+    console.log("Quest progress updated successfully:", data);
+  }
+
 
   useEffect(() => {
     if (loading || !user?.id) {
@@ -701,6 +718,22 @@ const [quests, setQuests] = useState<Quest[]>([]);
         
         // If data is null or empty, set to empty array
         setReferredUsers(data || []);
+        if (localStorage.getItem('ref_users_count')) {
+          const localRefUsersCount = localStorage.getItem('ref_users_count');
+          const isSame = data?.length === Number(localRefUsersCount)
+          if (isSame === false) { 
+            updateQuestProgressApi()
+            updateQuestProgress('referral', 100)
+            toast.success(`Quest completed: Reffered Successfully`, {
+              icon: '🎯',
+              duration: 3000
+            });
+          } else {
+            return
+          }
+        } else {
+          localStorage.setItem('ref_users_count', data.length)
+        }
       } catch (err) {
         console.error('Unexpected error:', err);
       }
