@@ -46,34 +46,37 @@ export function useQuestProgress() {
 
 
   const updateQuestProgress = useCallback((messageType: string, incrementAmount: number) => {
-    // First check if we have quests in localStorage
+ 
     const savedQuests = localStorage.getItem('quests_data');
     if (!savedQuests) return;
-
+  
     try {
       const questsData = JSON.parse(savedQuests);
       const targetQuest = questsData.find((q: any) => q.message_type === messageType);
       
       if (!targetQuest) return;
       
-      // Calculate new progress
+     
+      if (targetQuest.isCompleted) return;
+      
+ 
       const previousProgress = targetQuest.current_progress;
       let newProgress = Math.min(previousProgress + incrementAmount, targetQuest.required_progress);
-      const wasCompleted = targetQuest.isCompleted;
+
+      console.log("target require progress:" ,targetQuest.required_progress);
+      console.log("target new progress:" ,newProgress)
       const isNowCompleted = newProgress >= targetQuest.required_progress;
       
-  
-      if (wasCompleted) return;
-      
-      // Update the quest in localStorage
+
       targetQuest.current_progress = newProgress;
       targetQuest.progress_percentage = Math.floor((newProgress / targetQuest.required_progress) * 100);
       
-      if (isNowCompleted && !wasCompleted) {
+
+      if (isNowCompleted) {
         targetQuest.isCompleted = true;
         targetQuest.completed_at = new Date().toISOString();
         
- 
+        console.log("current progress",targetQuest.current_progress);
         toast.success(`Quest completed: ${targetQuest.title}`, {
           icon: '🎯',
           duration: 3000
@@ -82,7 +85,7 @@ export function useQuestProgress() {
   
       localStorage.setItem('quests_data', JSON.stringify(questsData));
       
-      // Update animation state in localStorage directly
+
       const currentProgressState = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"questsWithChanges":[],"creditsGained":0,"hasAnimation":false,"levelUp":false}');
       
       const updatedProgressState = {
@@ -93,20 +96,23 @@ export function useQuestProgress() {
             previousProgress,
             currentProgress: newProgress,
             isCompleted: isNowCompleted,
-            isNewlyCompleted: isNowCompleted && !wasCompleted,
+            isNewlyCompleted: isNowCompleted,
             message_type: targetQuest.message_type,
             reward_amount: targetQuest.reward_amount
           }
         ],
-        creditsGained: currentProgressState.creditsGained + (isNowCompleted && !wasCompleted ? targetQuest.reward_amount : 0),
+        creditsGained: currentProgressState.creditsGained + (isNowCompleted ? targetQuest.reward_amount : 0),
         hasAnimation: true,
         levelUp: false
       };
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProgressState));
-      
-      
       setProgressState(updatedProgressState);
+  
+    
+      return {
+        isComplete: isNowCompleted
+      };
       
     } catch (err) {
       console.error('Error updating quest progress:', err);

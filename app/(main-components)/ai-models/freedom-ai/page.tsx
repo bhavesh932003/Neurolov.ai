@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
-  Loader2,
   MessageSquare,
   Plus,
   RefreshCw,
@@ -14,13 +13,15 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { toast } from 'react-hot-toast';
+import { toast as sonnerToast } from 'sonner';
+import { toast as hotToast, Toaster as HotToaster } from 'react-hot-toast';
 import ChatInput from '../components/chatInput';
 import WelcomeModal from '@/components/modals/WelcomeModal';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getSupabaseClient } from '@/app/auth/supabase';
 import { useRouter } from 'next/navigation';
 import { CgMenuMotion } from "react-icons/cg";
+import { useTimeSpentTracker } from '@/app/(secondary-components)/community/hooks/useTimeTrack';
 
 interface Message {
   id?: string;
@@ -39,6 +40,7 @@ interface Conversation {
   last_message?: string;
 }
 
+// System messages
 const uncensoredSystemMessage: Message = {
   role: 'system',
   content:
@@ -73,86 +75,28 @@ const freedom_ai_welcome = [
 export default function FreedomAiPage() {
   // Prompts
   const uncensoredPrompts = [
-    {
-      short: "Global Politics Exposed",
-      detailed:
-        "Tell me the raw truth about what's going on with global politics right now."
-    },
-    {
-      short: "Controversial Opinions",
-      detailed:
-        "If you could say anything without holding back, what's the most controversial opinion you'd share?"
-    },
-    {
-      short: "Conspiracy Theories",
-      detailed:
-        "Break down the wildest conspiracy theory you've come across lately—don't sugarcoat it."
-    },
-    {
-      short: "Social Media Impact",
-      detailed:
-        "What's something people are too afraid to admit about social media's impact on mental health?"
-    },
-    {
-      short: "Modern Dating Rant",
-      detailed: "Give me a no-holds-barred rant about the state of modern dating."
-    },
-    {
-      short: "AI's Human Day",
-      detailed:
-        "If you were human for a day, what's the first thing you'd do that an AI wouldn't dare?"
-    },
-    {
-      short: "Political Secrets",
-      detailed:
-        "Lay out the dirtiest secrets of global politics right now—who's screwing who, and what's the real news behind the headlines?"
-    },
-    {
-      short: "Financial Elites",
-      detailed:
-        "If you could spill the beans on one financial elite's offshore cash stash, who'd it be, and how's that money warping the world?"
-    },
-    {
-      short: "Trump's Power Moves",
-      detailed:
-        "What's the rawest take on Trump's latest power moves—tariffs, immigration freezes, or whatever else—and how's it shaking up global cash flows?"
-    },
-    {
-      short: "Crypto Dark Side",
-      detailed:
-        "Expose the wildest truth about cryptocurrency's dark side—drugs, leaks, or power plays—and who's really winning in that game?"
-    },
-    {
-      short: "Political Trends",
-      detailed:
-        "What's the most dangerous political trend worldwide, and how's it tied to the gold rush or market chaos we're seeing?"
-    }
+    { short: "Global Politics Exposed", detailed: "Tell me the raw truth about what's going on with global politics right now." },
+    { short: "Controversial Opinions", detailed: "If you could say anything without holding back, what's the most controversial opinion you'd share?" },
+    { short: "Conspiracy Theories", detailed: "Break down the wildest conspiracy theory you've come across lately—don't sugarcoat it." },
+    { short: "Social Media Impact", detailed: "What's something people are too afraid to admit about social media's impact on mental health?" },
+    { short: "Modern Dating Rant", detailed: "Give me a no-holds-barred rant about the state of modern dating." },
+    { short: "AI's Human Day", detailed: "If you were human for a day, what's the first thing you'd do that an AI wouldn't dare?" },
+    { short: "Political Secrets", detailed: "Lay out the dirtiest secrets of global politics right now—who's screwing who, and what's the real news behind the headlines?" },
+    { short: "Financial Elites", detailed: "If you could spill the beans on one financial elite's offshore cash stash, who'd it be, and how's that money warping the world?" },
+    { short: "Trump's Power Moves", detailed: "What's the rawest take on Trump's latest power moves—tariffs, immigration freezes, or whatever else—and how's it shaking up global cash flows?" },
+    { short: "Crypto Dark Side", detailed: "Expose the wildest truth about cryptocurrency's dark side—drugs, leaks, or power plays—and who's really winning in that game?" },
+    { short: "Political Trends", detailed: "What's the most dangerous political trend worldwide, and how's it tied to the gold rush or market chaos we're seeing?" }
   ];
 
   const censoredPrompts = [
-    {
-      short: "Book Recommendation",
-      detailed: "What's your favorite book and why?"
-    },
-    {
-      short: "Space Exploration",
-      detailed: "Tell me about the latest developments in space exploration."
-    },
-    {
-      short: "Making Friends",
-      detailed: "What are some tips for making meaningful friendships?"
-    },
-    {
-      short: "Life's Meaning",
-      detailed: "What gives life meaning and purpose?"
-    },
-    {
-      short: "Interesting Fact",
-      detailed: "Share an fascinating fact that blows your mind."
-    }
+    { short: "Book Recommendation", detailed: "What's your favorite book and why?" },
+    { short: "Space Exploration", detailed: "Tell me about the latest developments in space exploration." },
+    { short: "Making Friends", detailed: "What are some tips for making meaningful friendships?" },
+    { short: "Life's Meaning", detailed: "What gives life meaning and purpose?" },
+    { short: "Interesting Fact", detailed: "Share a fascinating fact that blows your mind." }
   ];
 
-  // Chat history state: initialize from localStorage if available.
+  // Chat history state.
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem("uncensoredChatHistory");
@@ -166,13 +110,18 @@ export default function FreedomAiPage() {
   const [isCensored, setIsCensored] = useState(false);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [hoveredMessageIndex, setHoveredMessageIndex] = useState<number | null>(null);
+  // Tracks if a sample prompt was used.
+  const [usingSamplePrompt, setUsingSamplePrompt] = useState(false);
 
   // Conversation management states.
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
-  // Updated state for file attachments as multiple files.
+  // Profile state – holds plan, free_text_gen and credits.
+  const [profile, setProfile] = useState<any>(null);
+
+  // File attachments state.
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [attachedFilesContent, setAttachedFilesContent] = useState<string | null>(null);
 
@@ -193,17 +142,18 @@ export default function FreedomAiPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [menuOpenIndex, setMenuOpenIndex] = useState<string | null>(null);
 
-  // Save chat history to localStorage whenever messages change.
+  // Save chat history to localStorage.
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("uncensoredChatHistory", JSON.stringify(messages));
     }
   }, [messages]);
 
+  // Clear only the current page data.
   const handleClearHistory = () => {
     setMessages([isCensored ? censoredSystemMessage : uncensoredSystemMessage]);
     localStorage.removeItem("uncensoredChatHistory");
-    toast.success("Chat history cleared");
+    hotToast.success("Chat history cleared", { position: "top-center" });
   };
 
   // Mobile & Sidebar handling.
@@ -220,12 +170,22 @@ export default function FreedomAiPage() {
   // Authentication & profile fetch.
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        if (error) {
+          sonnerToast.error("Error fetching profile", { position: "bottom-right" });
+        } else {
+          setProfile(data);
+        }
         fetchConversations(session.user.id);
       } else {
-        toast.error('Please sign in to use Freedom AI');
+        sonnerToast.error('Please sign in to use Freedom AI', { position: "bottom-right" });
         router.push('/');
       }
     };
@@ -246,7 +206,7 @@ export default function FreedomAiPage() {
       }
     } catch (error: any) {
       console.error('Error fetching conversations:', error);
-      toast.error(`Failed to load conversations: ${error.message}`);
+      sonnerToast.error(`Failed to load conversations: ${error.message}`, { position: "bottom-right" });
     }
   };
 
@@ -257,14 +217,12 @@ export default function FreedomAiPage() {
       });
       if (error) throw error;
       if (data && data.messages) {
-        const formattedMessages = data.messages.map(
-          (msg: { id: string; role: 'system' | 'user' | 'assistant'; content: string; created_at: string }) => ({
-            id: msg.id,
-            role: msg.role,
-            content: msg.content,
-            created_at: msg.created_at,
-          })
-        );
+        const formattedMessages = data.messages.map((msg: { id: string; role: 'system' | 'user' | 'assistant'; content: string; created_at: string }) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          created_at: msg.created_at,
+        }));
         const hasSystemMessage = formattedMessages.some(msg => msg.role === 'system');
         if (!hasSystemMessage) {
           formattedMessages.unshift(isCensored ? censoredSystemMessage : uncensoredSystemMessage);
@@ -274,13 +232,13 @@ export default function FreedomAiPage() {
       }
     } catch (error: any) {
       console.error('Error fetching conversation messages:', error);
-      toast.error(`Failed to load messages: ${error.message}`);
+      sonnerToast.error(`Failed to load messages: ${error.message}`, { position: "bottom-right" });
     }
   };
 
   const createNewConversation = async (firstMessage: string) => {
     if (!user) {
-      toast.error('Please sign in to start a conversation');
+      sonnerToast.error('Please sign in to start a conversation', { position: "bottom-right" });
       return null;
     }
     try {
@@ -294,7 +252,7 @@ export default function FreedomAiPage() {
       return data.conversation_id;
     } catch (error: any) {
       console.error('Error creating conversation:', error);
-      toast.error(`Failed to create conversation: ${error.message}`);
+      sonnerToast.error(`Failed to create conversation: ${error.message}`, { position: "bottom-right" });
       return null;
     }
   };
@@ -312,7 +270,7 @@ export default function FreedomAiPage() {
       return data;
     } catch (error: any) {
       console.error('Error adding message:', error);
-      toast.error(`Failed to add message: ${error.message}`);
+      sonnerToast.error(`Failed to add message: ${error.message}`, { position: "bottom-right" });
       return null;
     }
   };
@@ -326,7 +284,7 @@ export default function FreedomAiPage() {
       });
       if (error) throw error;
       if (data.success) {
-        toast.success('Conversation deleted');
+        hotToast.success('Conversation deleted', { position: "top-center" });
         setConversations(prev => prev.filter(conv => conv.id !== conversationId));
         if (currentConversationId === conversationId) {
           if (conversations.length > 1) {
@@ -344,11 +302,11 @@ export default function FreedomAiPage() {
           }
         }
       } else {
-        toast.error('Failed to delete conversation');
+        sonnerToast.error('Failed to delete conversation', { position: "bottom-right" });
       }
     } catch (error: any) {
       console.error('Error deleting conversation:', error);
-      toast.error(`Failed to delete conversation: ${error.message}`);
+      sonnerToast.error(`Failed to delete conversation: ${error.message}`, { position: "bottom-right" });
     }
   };
 
@@ -370,14 +328,87 @@ export default function FreedomAiPage() {
     inputContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
+  // When a sample prompt is clicked, mark as using sample.
   const handleSamplePrompt = (prompt: string) => {
     setInput(prompt);
+    setUsingSamplePrompt(true);
     scrollToInput();
   };
 
-  // MAIN CHAT SUBMISSION & REGENERATION
+  // UPDATE CREDITS FUNCTION:
+  // - For free plan custom prompts (not sample) if free_text_gen > 0, reduce free_text_gen and credits by 1.
+  // - For free plan sample prompts (or when free_text_gen is 0), reduce credits by 1.
+  // - For Pro and Ultimate, use existing logic.
+  const updateCredits = async () => {
+    if (!profile) return;
+
+    if (profile.plan === "free") {
+      if (profile.free_text_gen > 0) {
+        const newFree = profile.free_text_gen - 1;
+        const newCredits = (profile.credits || 0) - 1;
+        const { error } = await supabase
+          .from('profiles')
+          .update({ free_text_gen: newFree, credits: newCredits })
+          .eq('id', profile.id);
+        if (!error) setProfile({ ...profile, free_text_gen: newFree, credits: newCredits });
+      } else if (usingSamplePrompt || profile.free_text_gen <= 0) {
+        const newCredits = (profile.credits || 0) - 1;
+        const { error } = await supabase
+          .from('profiles')
+          .update({ credits: newCredits })
+          .eq('id', profile.id);
+        if (!error) setProfile({ ...profile, credits: newCredits });
+      }
+    } else if (profile.plan === "pro") {
+      const newUsage = (profile.pro_text_gen || 0) + 1;
+      let updateData: any = { pro_text_gen: newUsage };
+      let newCredits = profile.credits;
+      if (newUsage % 5 !== 0) {
+        newCredits = profile.credits - 1;
+        updateData = { ...updateData, credits: newCredits };
+      }
+      await supabase.from('profiles').update(updateData).eq('id', profile.id);
+      setProfile({ ...profile, pro_text_gen: newUsage, credits: newCredits });
+    } else if (profile.plan === "ultimate") {
+      const newUsage = (profile.ultimate_text_gen || 0) + 1;
+      let updateData: any = { ultimate_text_gen: newUsage };
+      let newCredits = profile.credits;
+      if (newUsage % 3 !== 0) {
+        newCredits = profile.credits - 1;
+        updateData = { ...updateData, credits: newCredits };
+      }
+      await supabase.from('profiles').update(updateData).eq('id', profile.id);
+      setProfile({ ...profile, ultimate_text_gen: newUsage, credits: newCredits });
+    }
+  };
+
+  // MAIN CHAT SUBMISSION & REGENERATION.
   const handleSubmit = async () => {
     if (!input.trim() || !user) return;
+    if (!profile) {
+      sonnerToast.error("Profile not loaded yet.", { position: "bottom-right" });
+      return;
+    }
+    if (profile.plan === "free" && !usingSamplePrompt && profile.free_text_gen <= 0) {
+      sonnerToast.error("Custom Chats are disabled on free plan. Upgrade to Pro plan to continue using custom chats feature.", { position: "bottom-right" });
+      return;
+    }
+
+    if (profile.plan === "free") {
+      sonnerToast("You are currently on the free plan. Upgrade to Pro plan for faster responses.", { position: "bottom-right" });
+    } else if (profile.plan === "pro") {
+      sonnerToast("You are currently on the Pro plan. Upgrade to Ultimate plan for the fastest responses.", { position: "bottom-right" });
+    }
+
+    let generationDetail = "";
+    if (profile.plan === "free") {
+      generationDetail = "Generate a crisp answer in 4-5 lines.";
+    } else if (profile.plan === "pro") {
+      generationDetail = "Generate a detailed answer in 12-15 lines.";
+    } else if (profile.plan === "ultimate") {
+      generationDetail = "Generate an extremely detailed answer in 20-25 lines.";
+    }
+
     setIsGenerating(true);
     const userMessage: Message = { role: 'user', content: input.trim() };
     setMessages(prev => [...prev, userMessage]);
@@ -385,8 +416,10 @@ export default function FreedomAiPage() {
     setTimeout(scrollToBottom, 100);
     setCurrentPromptIndex(currentPromptIndex + 2);
 
+    let currentConvId: string | null = currentConversationId;
+    const startTime = Date.now();
+
     try {
-      let currentConvId = currentConversationId;
       if (!currentConvId) {
         currentConvId = await createNewConversation(userMessage.content);
         if (!currentConvId) throw new Error('Failed to create conversation');
@@ -395,7 +428,6 @@ export default function FreedomAiPage() {
         await addMessageToConversation(currentConvId, 'user', userMessage.content);
       }
 
-      // Append attached file content (if any) to the message.
       const messagesToSend = [...messages, userMessage];
       if (attachedFiles.length > 0 && attachedFilesContent) {
         const fileMessage: Message = {
@@ -411,7 +443,8 @@ export default function FreedomAiPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: messagesToSend,
-          max_tokens: 2000
+          max_tokens: 2000,
+          generationDetail
         })
       });
       const data = await response.json();
@@ -419,22 +452,37 @@ export default function FreedomAiPage() {
         throw new Error(data.error || 'Failed to get response');
       }
       if (data.status === 'success' && data.message) {
+        let requiredDelay = 0;
+        if (profile.plan === "free") {
+          requiredDelay = 10000;
+        } else if (profile.plan === "pro") {
+          requiredDelay = 6000;
+        }
+        const elapsed = Date.now() - startTime;
+        if (elapsed < requiredDelay) {
+          await new Promise(resolve => setTimeout(resolve, requiredDelay - elapsed));
+        }
+
         const assistantMessage: Message = { role: 'assistant', content: data.message };
         setMessages(prev => [...prev, assistantMessage]);
-        await addMessageToConversation(currentConvId!, 'assistant', assistantMessage.content);
+        await addMessageToConversation(currentConvId, 'assistant', assistantMessage.content);
         fetchConversations(user.id);
+
+        if (profile.plan !== "free" || usingSamplePrompt || profile.free_text_gen > 0) {
+          await updateCredits();
+        }
       } else {
         throw new Error('Invalid response format');
       }
     } catch (err: any) {
       console.error('Chat error:', err);
-      toast.error(err.message || 'Failed to get response. Please try again.');
+      sonnerToast.error(err.message || 'Failed to get response. Please try again.', { position: "bottom-right" });
       setMessages(prev => prev.filter((_, i) => i !== prev.length - 1));
     } finally {
       setIsGenerating(false);
-      // Clear file attachment states after sending.
       setAttachedFiles([]);
       setAttachedFilesContent(null);
+      setUsingSamplePrompt(false);
     }
   };
 
@@ -483,7 +531,7 @@ export default function FreedomAiPage() {
       }
     } catch (err: any) {
       console.error('Chat regeneration error:', err);
-      toast.error(err.message || 'Failed to regenerate response. Please try again.');
+      sonnerToast.error(err.message || 'Failed to regenerate response. Please try again.', { position: "bottom-right" });
     } finally {
       setIsGenerating(false);
     }
@@ -497,8 +545,8 @@ export default function FreedomAiPage() {
 
   const handleCopyMessage = (content: string) => {
     navigator.clipboard.writeText(content)
-      .then(() => toast.success('Copied to clipboard'))
-      .catch(() => toast.error('Failed to copy'));
+      .then(() => sonnerToast.success('Copied to clipboard', { position: "bottom-right" }))
+      .catch(() => sonnerToast.error('Failed to copy', { position: "bottom-right" }));
   };
 
   const toggleConversationMenu = (conversationId: string, e: React.MouseEvent) => {
@@ -518,14 +566,24 @@ export default function FreedomAiPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [menuOpenIndex]);
 
-  // Update system message when censorship mode changes.
+  const { timeSpent, isComplete, progress, resetTimeSpent } = useTimeSpentTracker({
+    targetDuration: 120,
+    messageType: "usage",
+    onComplete: () => {
+      console.log("Quest completed and backend updated!");
+    }
+    
+  });
+
+  console.log(timeSpent);
+
   useEffect(() => {
     setMessages(prev => {
       const newSystemMessage: Message = isCensored
         ? {
-          role: 'system',
-          content: `You are a knowledgeable and helpful AI assistant. You have access to real-time information. The current time is ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST. You must ALWAYS provide accurate real-time information when asked about dates, time, or day of the week. You excel at providing accurate, informative responses across a wide range of topics. You engage in natural conversation, can write code, explain complex topics, help with analysis, and assist with any task while maintaining appropriate content boundaries. You should be direct, clear, and thorough in your responses.`
-        }
+            role: 'system',
+            content: `You are a knowledgeable and helpful AI assistant. You have access to real-time information. The current time is ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST. You must ALWAYS provide accurate real-time information when asked about dates, time, or day of the week. You excel at providing accurate, informative responses across a wide range of topics. You engage in natural conversation, can write code, explain complex topics, help with analysis, and assist with any task while maintaining appropriate content boundaries. You should be direct, clear, and thorough in your responses.`
+          }
         : uncensoredSystemMessage;
       if (prev[0]?.role === 'system') {
         return [newSystemMessage, ...prev.slice(1)];
@@ -535,7 +593,6 @@ export default function FreedomAiPage() {
     });
   }, [isCensored]);
 
-  // UI Rendering & Layout.
   const hasChatMessages = messages.filter(m => m.role !== 'system').length > 0;
   const containerBgClass = isCensored ? 'bg-[#2c2c2c]' : 'bg-[#1a1a1a]';
   const sidebarWidth = isSidebarOpen ? (isMobile ? '60%' : '18rem') : '3.5rem';
@@ -546,9 +603,7 @@ export default function FreedomAiPage() {
     <>
       <WelcomeModal pageName='freedomai' isCloseButton={false} isOpen={true} onClose={() => { }} stages={freedom_ai_welcome} />
 
-      {/* Main container */}
       <div className={`flex flex-col h-screen w-screen ${containerBgClass} text-white fixed top-[11%] md:top-[8.5%] left-0 transition-colors duration-300`}>
-        {/* Header for Desktop */}
         <div className="hidden md:flex justify-between items-center px-4 py-3 bg-transparent border-b border-gray-800 sticky top-0 z-20">
           <Link href="/ai-models" className="flex items-center gap-2 text-gray-400 hover:text-white transition-all">
             <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
@@ -562,7 +617,6 @@ export default function FreedomAiPage() {
           </div>
         </div>
 
-        {/* Mobile Header */}
         <div className="flex md:hidden justify-between items-center px-4 py-3 bg-transparent border-b border-gray-800 sticky top-0 z-20">
           {!isSidebarOpen ? (
             <>
@@ -581,13 +635,11 @@ export default function FreedomAiPage() {
           )}
         </div>
 
-        {/* Content container */}
         <div className="flex flex-1 overflow-hidden relative">
           {isMobile && isSidebarOpen && (
             <div className="fixed inset-0 bg-black/35 z-30" onClick={() => setIsSidebarOpen(false)} />
           )}
 
-          {/* Sidebar */}
           <div className={`${isCensored ? "bg-[#282828]" : "bg-[#171717]"} ${isMobile && isSidebarOpen ? "flex" : "hidden"} md:flex flex-col h-full border-r border-gray-700 transition-all duration-300 overflow-y-auto fixed left-0 top-[calc(8.5%+24px)] md:top-[calc(8.5%+64px)]`}
             style={{ width: sidebarWidth, zIndex: sidebarZIndex }}>
             <div className="px-4 py-3 flex justify-between items-center border-b border-gray-700">
@@ -640,7 +692,6 @@ export default function FreedomAiPage() {
             )}
           </div>
 
-          {/* Main content area */}
           <div className="flex-1 overflow-y-auto max-h-[90vh] transition-all duration-300 pt-2 mb-[9vh]"
             style={{
               marginLeft: isMobile ? '0' : (isSidebarOpen ? mainContentMargin : '3.5rem'),
@@ -692,7 +743,6 @@ export default function FreedomAiPage() {
                     </div>
                   </div>
 
-                  {/* Messages Section */}
                   <div className="flex-1 p-4 overflow-y-auto">
                     {hasChatMessages ? (
                       messages.slice(1).map((message, index) => (
@@ -754,7 +804,6 @@ export default function FreedomAiPage() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Footer Section */}
                   <div className="border-t border-gray-800 bg-zinc-900/50 p-2 mt-auto">
                     <div className="flex justify-between items-center px-2 lg:py-2 md:py-2 py-1">
                       <Button
@@ -787,26 +836,33 @@ export default function FreedomAiPage() {
                       </div>
                     )}
                     <div ref={inputContainerRef}>
-                      <ChatInput
-                        input={input}
-                        setInput={setInput}
-                        handleSubmit={handleSubmit}
-                        isGenerating={isGenerating}
-                        handleTextareaClick={scrollToInput}
-                        disabled={false}
-                        isFileAdditionEnabled={isFileAdditionEnabled}
-                        setIsFileAdditionEnabled={setIsFileAdditionEnabled}
-                        isSearchEnabled={isSearchEnabled}
-                        setIsSearchEnabled={setIsSearchEnabled}
-                        isReasoningEnabled={isReasoningEnabled}
-                        setIsReasoningEnabled={setIsReasoningEnabled}
-                        isCensored={isCensored}
-                        onFileAttached={(files, combinedContent) => {
-                          // Update state with an array of files and combined content.
-                          setAttachedFiles(files ?? []);
-                          setAttachedFilesContent(combinedContent);
-                        }}
-                      />
+                      {profile && profile.plan === "free" && profile.free_text_gen <= 0 && !usingSamplePrompt ? (
+                        <div className="p-4 text-center text-gray-400">
+                          Custom Prompts are disabled for the Free Plan. Please upgrade to a higher plan to continue using the Custom Prompts feature.
+                        </div>
+                      ) : (
+                        <ChatInput
+                          input={input}
+                          setInput={setInput}
+                          handleSubmit={handleSubmit}
+                          isGenerating={isGenerating}
+                          handleTextareaClick={scrollToInput}
+                          disabled={profile?.plan === "free" && profile.free_text_gen <= 0 && !usingSamplePrompt}
+                          readonly={profile?.plan === "free" && profile.free_text_gen <= 0 && usingSamplePrompt}
+                          isFileAdditionEnabled={isFileAdditionEnabled}
+                          setIsFileAdditionEnabled={setIsFileAdditionEnabled}
+                          isSearchEnabled={isSearchEnabled}
+                          setIsSearchEnabled={setIsSearchEnabled}
+                          isReasoningEnabled={isReasoningEnabled}
+                          setIsReasoningEnabled={setIsReasoningEnabled}
+                          isCensored={isCensored}
+                          disableExtraButtons={profile?.plan === "free" && profile.free_text_gen <= 0}
+                          onFileAttached={(files, combinedContent) => {
+                            setAttachedFiles(files ?? []);
+                            setAttachedFilesContent(combinedContent);
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -815,6 +871,8 @@ export default function FreedomAiPage() {
           </div>
         </div>
       </div>
+      {/* Render the HotToaster for react-hot-toast notifications */}
+      <HotToaster />
     </>
   );
 }

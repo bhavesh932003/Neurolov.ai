@@ -70,7 +70,8 @@ export const GamifiedProfile: React.FC = ({setIsShareModalOpen, setRefCode}: any
   const {
     progressState, 
     clearAnimations,
-    syncQuestsWithServer
+    syncQuestsWithServer,
+    updateQuestProgress
   } = useQuestProgress()
   const supabase = getSupabaseClient();
   const [activeTab, setActiveTab] = useState<'achievements' | 'referrals' | 'redeem' | 'collections'>('achievements');
@@ -619,7 +620,9 @@ const [quests, setQuests] = useState<Quest[]>([]);
             setShowCreditAnimation(false);
   
             // Update user profile with new credits
-            const newTotalCredits = (userProfile?.credits || 0) + progressState.creditsGained;
+            
+
+            const newTotalCredits = (userProfile?.credits )
             
             // Update user profile
             setUserProfile(prev => ({
@@ -682,6 +685,22 @@ const [quests, setQuests] = useState<Quest[]>([]);
     return "";
   };
 
+  async function updateQuestProgressApi() {
+    if (!user) {
+      return;
+    }
+    const { data, error } = await supabase.rpc("update_quest_progress", {
+      action_value: 100,
+      user_uuid: user.id,
+      message_type: "referral",
+    });
+    if (error) {
+      console.error("Error updating quest progress:", error);
+      return;
+    }
+    console.log("Quest progress updated successfully:", data);
+  }
+
 
   useEffect(() => {
     if (loading || !user?.id) {
@@ -701,6 +720,32 @@ const [quests, setQuests] = useState<Quest[]>([]);
         
         // If data is null or empty, set to empty array
         setReferredUsers(data || []);
+        const localRefUsersCount = localStorage.getItem('ref_users_count');
+        if (localRefUsersCount) {
+          const isSame = data?.length === Number(localRefUsersCount)
+          if (isSame === false) { 
+            updateQuestProgressApi()
+            updateQuestProgress('referral', 100)
+        
+            localStorage.setItem('ref_users_count', data.length)
+            const syncResult = await syncQuestsWithServer(user.id);
+           
+          
+          if (syncResult.success) {
+            setQuests(syncResult.quests);
+      
+            setUserProfile(prev => ({
+              ...prev,
+              credits: prev.credits + 1000
+            }));
+          }
+            
+          } else {
+            return
+          }
+        } else {
+          localStorage.setItem('ref_users_count', data.length)
+        }
       } catch (err) {
         console.error('Unexpected error:', err);
       }
