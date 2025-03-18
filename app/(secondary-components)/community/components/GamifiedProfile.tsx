@@ -620,7 +620,9 @@ const [quests, setQuests] = useState<Quest[]>([]);
             setShowCreditAnimation(false);
   
             // Update user profile with new credits
-            const newTotalCredits = (userProfile?.credits || 0) + progressState.creditsGained;
+            
+
+            const newTotalCredits = (userProfile?.credits )
             
             // Update user profile
             setUserProfile(prev => ({
@@ -718,16 +720,26 @@ const [quests, setQuests] = useState<Quest[]>([]);
         
         // If data is null or empty, set to empty array
         setReferredUsers(data || []);
-        if (localStorage.getItem('ref_users_count')) {
-          const localRefUsersCount = localStorage.getItem('ref_users_count');
+        const localRefUsersCount = localStorage.getItem('ref_users_count');
+        if (localRefUsersCount) {
           const isSame = data?.length === Number(localRefUsersCount)
           if (isSame === false) { 
             updateQuestProgressApi()
             updateQuestProgress('referral', 100)
-            toast.success(`Quest completed: Reffered Successfully`, {
-              icon: '🎯',
-              duration: 3000
-            });
+        
+            localStorage.setItem('ref_users_count', data.length)
+            const syncResult = await syncQuestsWithServer(user.id);
+           
+          
+          if (syncResult.success) {
+            setQuests(syncResult.quests);
+      
+            setUserProfile(prev => ({
+              ...prev,
+              credits: prev.credits + 1000
+            }));
+          }
+            
           } else {
             return
           }
