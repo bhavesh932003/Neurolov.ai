@@ -698,7 +698,7 @@ export default function FreedomAiPage() {
               width: isMobile ? '100%' : (isSidebarOpen ? `calc(100% - ${mainContentMargin})` : 'calc(100% - 3.5rem)')
             }}>
             <div className={`flex flex-col ${hasChatMessages ? "" : "mt-24 md:mt-36"} px-2 md:px-6 lg:px-16 xl:px-24 mt-4 md:mt-8 justify-between max-h-[calc(100vh-180px)]`} ref={chatContainerRef}>
-              <div className="flex flex-col pb-16 md:pb-10 lg:pb-8">
+              <div className="flex flex-col pb-32 md:pb-16 lg:pb-8">
                 <div className={`flex relative flex-col mx-0 md:mx-4 lg:mx-6 my-2 rounded-lg overflow-hidden border border-gray-800 bg-zinc-900/50 flex-grow transition-all duration-300 ${hasChatMessages ? 'min-h-[70vh]' : 'min-h-[50vh]'}`}>
                   <div className="flex justify-between items-center px-4 md:px-10 my-2 lg:my-4 md:my-4 relative md:py-8 lg:py-12 py-4 border-b border-white/25">
                     <div className="w-2/3 pr-4">
