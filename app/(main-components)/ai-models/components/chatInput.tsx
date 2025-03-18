@@ -79,8 +79,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
   // Define textarea classes based on whether we are in censored mode.
   // In uncensored mode, the extra buttons are not rendered and the textarea is smaller.
   const textAreaClasses = isCensored
-    ? "w-full bg-transparent text-white rounded-lg p-3 pr-14 min-h-[88px] max-h-[200px] resize-none focus:outline-none overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-800 scrollbar-thumb-rounded-full"
-    : "w-full bg-transparent text-white rounded-lg p-3 pr-14 min-h-[20px] max-h-[60px] resize-none focus:outline-none overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-800 scrollbar-thumb-rounded-full";
+    ? "w-full bg-transparent text-white rounded-lg p-3 pr-14 min-h-[90px] max-h-[200px] resize-none focus:outline-none overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-800 scrollbar-thumb-rounded-full mb-4"
+    : "w-full bg-transparent text-white rounded-lg p-3 pr-14 min-h-[22px] max-h-[60px] resize-none focus:outline-none overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-800 scrollbar-thumb-rounded-full mb-4";
 
   // Auto-resize the textarea.
   useEffect(() => {
@@ -287,7 +287,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             </div>
           ))}
 
-        <div className="relative bg-[#1a1a1a] rounded-lg border border-gray-800 pb-4">
+        <div className="relative bg-[#1a1a1a] rounded-lg border border-gray-800 pb-8">
           {fileErrors.length > 0 && (
             <div className="mt-1 mx-3 p-2 text-xs text-red-400 bg-red-900/20 rounded-md">
               {fileErrors.join("\n")}

@@ -524,7 +524,7 @@ export default function AIModelsPage() {
 
               {/* Coming Soon Overlay */}
               {!['neurolov-image', 'freedom-ai'].includes(model.id) && !isDev && (
-                <div className="absolute inset-0 z-40 backdrop-blur-md bg-black/50 flex items-center justify-center">
+                <div className="absolute inset-0 z-10 backdrop-blur-md bg-black/50 flex items-center justify-center">
                   <div className="text-center">
                     <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
                       Coming Soon
