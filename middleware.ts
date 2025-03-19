@@ -9,7 +9,8 @@ const protectedPaths = [
   '/ai-models',
   '/earnings',
   '/connect-to-earn',
-  '/wallet'
+  '/wallet',
+  '/neurolov-image'
 ]
 
 // Routes that should be accessible without auth
