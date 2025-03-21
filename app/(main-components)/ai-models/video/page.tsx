@@ -89,6 +89,7 @@ export default function VideoGeneratorPage() {
   const [aspectRatio, setAspectRatio] = useState<"1:1" | "16:9" | "9:16">("1:1");
   const [generationCount, setGenerationCount] = useState<number>(4);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [generationStatus, setGenerationStatus] = useState<"idle" | "loading" | "complete">("idle");
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -104,6 +105,7 @@ export default function VideoGeneratorPage() {
     setIsGenerating(true);
     setError(null);
     setGeneratedVideoUrl(null);
+    setGenerationStatus("loading");
 
     try {
       console.log('Starting video generation with options:', {
@@ -221,6 +223,7 @@ export default function VideoGeneratorPage() {
                 Math.floor((pollData.data.updated_at - pollData.data.created_at) / 1000)
               );
 
+              setGenerationStatus("complete");
               toast.success("Video generated successfully!");
 
               setIsGenerating(false);
@@ -250,6 +253,7 @@ export default function VideoGeneratorPage() {
           setError(err instanceof Error ? err.message : 'Unknown error occurred');
           toast.error(err instanceof Error ? err.message : 'Unknown error occurred');
           setIsGenerating(false);
+          setGenerationStatus("idle");
         }
       };
 
@@ -260,6 +264,7 @@ export default function VideoGeneratorPage() {
       setError(err instanceof Error ? err.message : 'Failed to generate video');
       toast.error(err instanceof Error ? err.message : 'Failed to generate video');
       setIsGenerating(false);
+      setGenerationStatus("idle");
     }
   };
 
@@ -297,7 +302,7 @@ export default function VideoGeneratorPage() {
         <div className="flex-1 overflow-hidden px-6 md:px-12 lg:px-16 xl:px-20">
           <div className="h-full flex flex-col md:flex-row gap-8 md:gap-12">
             {/* Left Sidebar - Now with fixed height and scrollable */}
-            <div className="w-full md:w-[350px] flex-shrink-0 h-[calc(100vh-150px)] overflow-hidden">
+            <div className="w-full md:w-[350px] flex-shrink-0 h-[calc(100vh-170px)] overflow-hidden">
               <div className="h-full relative overflow-y-auto px-4 space-y-4">
                 {mode === "text-to-video" ? (
                   <>
@@ -337,7 +342,7 @@ export default function VideoGeneratorPage() {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                       />
-                      
+
                       {/* Negative Prompt */}
                       <div className="flex items-center gap-2 mb-2 mt-3">
                         <div className="text-red-400">
@@ -362,7 +367,7 @@ export default function VideoGeneratorPage() {
                         value={negativePrompt}
                         onChange={(e) => setNegativePrompt(e.target.value)}
                       />
-                      
+
                       {/* <div className="flex flex-wrap gap-1">
                         <div className="py-1 text-xs text-gray-400">Hints:</div>
                         <div className="px-1 py-1 bg-[#0A0A0A] text-xs text-gray-400">Double exposure</div>
@@ -388,11 +393,11 @@ export default function VideoGeneratorPage() {
                           <Select
                             value={options.model_name}
                             onValueChange={(value) => {
-                              setOptions({ 
-                                ...options, 
+                              setOptions({
+                                ...options,
                                 model_name: value,
                                 // Reset mode to standard if switching to Kling v1.6
-                                mode: value === 'kling-v1-6' ? 'std' : options.mode 
+                                mode: value === 'kling-v1-6' ? 'std' : options.mode
                               })
                             }}
                           >
@@ -623,7 +628,7 @@ export default function VideoGeneratorPage() {
                 {/* Generate Button */}
                 <div className="flex gap-3 sticky bottom-0 w-full">
                   <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium  rounded-lg"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
                     onClick={handleGenerate}
                     disabled={isGenerating}
                   >
@@ -633,7 +638,7 @@ export default function VideoGeneratorPage() {
                         Generating...
                       </span>
                     ) : (
-                      "Generate videos"
+                      "Generate Video"
                     )}
                   </Button>
                 </div>
@@ -644,82 +649,181 @@ export default function VideoGeneratorPage() {
             <div className="flex-1 overflow-auto h-[calc(100vh-100px)]">
               {mode === "text-to-video" ? (
                 <>
-                  <h2 className="text-2xl text-center p-4 font-medium text-white">
-                    Looking for <span className="text-emerald-400">inspiration</span>? Some examples below
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
-                    {/* First Image */}
-                    <div className="relative rounded-2xl overflow-hidden group h-full">
-                      <div className="relative h-full">
-                        <Image
-                          src="/image.png"
-                          alt="Flower field with a windmill in the distance"
-                          className="h-[92.5%] w-full object-cover"
-                          width={330}
-                          height={400}
-                        />
-                        <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
-                          <p className="text-white text-lg font-light leading-tight max-w-[70%]">
-                            A flower field with a windmill in the distance...
-                          </p>
-                          <button
-                            className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
-                            onClick={() => handleUsePrompt("A flower field with a windmill in the distance...")}
-                          >
-                            Use Prompt
-                          </button>
+                  {generationStatus === "idle" && (
+                    <>
+                      <h2 className="text-2xl text-center p-4 font-medium text-white">
+                        Looking for <span className="text-emerald-400">inspiration</span>? Some examples below
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
+                        {/* First Image */}
+                        <div className="relative rounded-2xl overflow-hidden group h-full">
+                          <div className="relative h-full">
+                            <Image
+                              src="/image.png"
+                              alt="Flower field with a windmill in the distance"
+                              className="h-[92.5%] w-full object-cover"
+                              width={330}
+                              height={400}
+                            />
+                            <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
+                              <p className="text-white text-lg font-light leading-tight max-w-[70%]">
+                                A flower field with a windmill in the distance...
+                              </p>
+                              <button
+                                className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                                onClick={() => handleUsePrompt("A flower field with a windmill in the distance...")}
+                              >
+                                Use Prompt
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Second Image */}
-                    <div className="relative rounded-2xl overflow-hidden group h-full">
-                      <div className="relative h-full">
-                        <Image
-                          src="/image1.png"
-                          alt="Fantasy castle sitting on top of a floating island"
-                          className="h-[92.5%] w-full object-cover"
-                          width={330}
-                          height={400}
-                        />
-                        <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
-                          <p className="text-white text-lg font-light leading-tight max-w-[70%]">
-                            A fantasy castle sitting on top of a floating island...
-                          </p>
-                          <button
-                            className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
-                            onClick={() => handleUsePrompt("A fantasy castle sitting on top of a floating island...")}
-                          >
-                            Use Prompt
-                          </button>
+                        {/* Second Image */}
+                        <div className="relative rounded-2xl overflow-hidden group h-full">
+                          <div className="relative h-full">
+                            <Image
+                              src="/image1.png"
+                              alt="Fantasy castle sitting on top of a floating island"
+                              className="h-[92.5%] w-full object-cover"
+                              width={330}
+                              height={400}
+                            />
+                            <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
+                              <p className="text-white text-lg font-light leading-tight max-w-[70%]">
+                                A fantasy castle sitting on top of a floating island...
+                              </p>
+                              <button
+                                className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                                onClick={() => handleUsePrompt("A fantasy castle sitting on top of a floating island...")}
+                              >
+                                Use Prompt
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Third Image */}
-                    <div className="relative rounded-2xl overflow-hidden group h-full">
-                      <div className="relative h-full">
-                        <Image
-                          src="/image2.png"
-                          alt="Cozy library full of books, with an open..."
-                          className="h-[92.5%] w-full object-cover"
-                          width={330}
-                          height={400}
-                        />
-                        <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
-                          <p className="text-white text-lg font-light leading-tight max-w-[70%]">
-                            A cozy library full of books, with an open...
-                          </p>
-                          <button
-                            className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
-                            onClick={() => handleUsePrompt("A cozy library full of books, with an open...")}
-                          >
-                            Use Prompt
-                          </button>
+                        {/* Third Image */}
+                        <div className="relative rounded-2xl overflow-hidden group h-full">
+                          <div className="relative h-full">
+                            <Image
+                              src="/image2.png"
+                              alt="Cozy library full of books, with an open..."
+                              className="h-[92.5%] w-full object-cover"
+                              width={330}
+                              height={400}
+                            />
+                            <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
+                              <p className="text-white text-lg font-light leading-tight max-w-[70%]">
+                                A cozy library full of books, with an open...
+                              </p>
+                              <button
+                                className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                                onClick={() => handleUsePrompt("A cozy library full of books, with an open...")}
+                              >
+                                Use Prompt
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {generationStatus === "loading" && (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <div className="relative w-full max-w-3xl aspect-video rounded-xl bg-gray-800 overflow-hidden">
+                        <div className="absolute inset-0 w-full h-full">
+                          <div className="animate-pulse w-full h-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%] animate-shimmer"></div>
+                        </div>
+
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="h-16 w-16 rounded-full bg-gray-900/50 flex items-center justify-center">
+                            <svg className="w-8 h-8 text-white opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"></path>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-8 text-center">
+                        <h3 className="text-xl font-medium text-white mb-2">Your imagination is generating</h3>
+                        <p className="text-gray-400">It takes approximately 5 to 10 minutes. Stay tuned!</p>
+
+                        <div className="mt-4 flex items-center justify-center space-x-2">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce"></div>
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "0.4s" }}></div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )}
+
+                  {generationStatus === "complete" && generatedVideoUrl && (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <div className="w-full max-w-3xl">
+                        <div className="relative w-full rounded-xl overflow-hidden bg-black shadow-xl">
+                          <video
+                            ref={videoRef}
+                            src={generatedVideoUrl}
+                            className="w-full aspect-video object-contain"
+                            controls
+                            autoPlay
+                            loop
+                            playsInline
+                          />
+                        </div>
+
+                        <div className="mt-6 bg-[#111111] rounded-lg p-4">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between">
+                            <div>
+                              <h3 className="text-lg font-medium text-white mb-1">Generated Video</h3>
+                              <p className="text-sm text-gray-400 mb-2">
+                                {inferenceTime && `Generated in ${inferenceTime} seconds`}
+                              </p>
+                              <div className="bg-[#0A0A0A] rounded p-3 mt-2 max-w-lg">
+                                <p className="text-sm text-gray-300">{prompt}</p>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 md:mt-0">
+                              <button
+                                onClick={() => {
+                                  // Create a temporary link element
+                                  const link = document.createElement('a');
+                                  // Set the href to the video URL
+                                  link.href = generatedVideoUrl;
+                                  // Set the download attribute with a filename
+                                  link.download = "generated-video.mp4";
+                                  // Append to the document
+                                  document.body.appendChild(link);
+                                  // Trigger the download
+                                  link.click();
+                                  // Clean up
+                                  document.body.removeChild(link);
+                                }}
+                                className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+                              >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download Video
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 text-center">
+                          <Button
+                            onClick={() => setGenerationStatus("idle")}
+                            className="bg-[#111111] hover:bg-[#1a1a1a] text-white font-medium rounded-lg"
+                          >
+                            Generate Another Video
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="flex items-center justify-center h-full">
