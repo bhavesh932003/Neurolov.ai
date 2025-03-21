@@ -58,7 +58,7 @@ const defaultOptions: GenerationOptions = {
   width: 512,
   num_frames: 16,
   num_inference_steps: 20,
-  guidance_scale: 7,
+  guidance_scale: 0.5,
   upscale_height: 640,
   upscale_width: 1024,
   upscale_strength: 0.6,
@@ -104,7 +104,7 @@ export default function VideoGeneratorPage() {
     setIsGenerating(true);
     setError(null);
     setGeneratedVideoUrl(null);
-    
+
     try {
       console.log('Starting video generation with options:', {
         prompt,
@@ -118,9 +118,14 @@ export default function VideoGeneratorPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...options,
+          model_name: options.model_name,
           prompt: prompt.trim(),
           negative_prompt: negativePrompt.trim() || undefined,
+          cfg_scale: options.guidance_scale,
+          mode: options.mode,
+          aspect_ratio: options.aspect_ratio,
+          duration: options.duration,
+          camera_control: options.camera_control
         }),
       });
 
@@ -175,7 +180,7 @@ export default function VideoGeneratorPage() {
           }
 
           const pollData = await pollResponse.json();
-          
+
           console.log(`Poll Response (attempt ${attempts + 1}):`, {
             code: pollData.code,
             message: pollData.message,
@@ -184,8 +189,8 @@ export default function VideoGeneratorPage() {
             statusMessage: pollData.data?.task_status_msg,
             hasResult: Boolean(pollData.data?.task_result),
             resultType: pollData.data?.task_result ? typeof pollData.data.task_result : 'none',
-            processingTime: pollData.data?.created_at ? 
-              `${Math.floor((Date.now() - pollData.data.created_at) / 1000)}s` : 
+            processingTime: pollData.data?.created_at ?
+              `${Math.floor((Date.now() - pollData.data.created_at) / 1000)}s` :
               'unknown',
             rawResponse: pollData // Log full response for debugging
           });
@@ -215,9 +220,9 @@ export default function VideoGeneratorPage() {
               setInferenceTime(
                 Math.floor((pollData.data.updated_at - pollData.data.created_at) / 1000)
               );
-              
+
               toast.success("Video generated successfully!");
-              
+
               setIsGenerating(false);
               return;
             } else {
@@ -273,7 +278,7 @@ export default function VideoGeneratorPage() {
             </div>
             <span className="text-white font-light">All AI Models</span>
           </Link>
-          
+
           <Select
             value={mode}
             onValueChange={(value: "text-to-video" | "image-to-video") => setMode(value)}
@@ -291,269 +296,334 @@ export default function VideoGeneratorPage() {
         {/* Main Content */}
         <div className="flex-1 overflow-hidden px-6 md:px-12 lg:px-16 xl:px-20">
           <div className="h-full flex flex-col md:flex-row gap-8 md:gap-12">
-              {/* Left Sidebar */}
-            <div className="w-full md:w-[350px] flex flex-col gap-4 flex-shrink-0 overflow-auto">
-              {mode === "text-to-video" ? (
-                <>
-                {/* Prompt Section */}
-                <div className="bg-[#111111] rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="text-emerald-400">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M12 2L2 7L12 12L22 7L12 2Z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M2 17L12 22L22 17"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M2 12L12 17L22 12"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-emerald-400 font-medium">Prompt</span>
-                  </div>
-                  <Textarea
-                      placeholder="Please describe your creative ideas for the video or view our sample prompts to get started!"
-                    className="bg-[#0A0A0A] border-none h-[120px] text-sm resize-none mb-4"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                  />
-                  <div className="flex flex-wrap gap-1">
-                    <div className="py-1 text-xs text-gray-400">Hints:</div>
-                    <div className="px-1 py-1 bg-[#0A0A0A] text-xs text-gray-400">Double exposure</div>
-                    <div className="px-1 py-1 bg-[#0A0A0A] text-xs text-gray-400">Dramatic</div>
-                    <div className="px-1 py-1 bg-[#0A0A0A] text-xs text-gray-400">Narrative</div>
-                    <div className="px-1 py-1 bg-[#0A0A0A] text-xs text-gray-400">Aime</div>
-                  </div>
-                </div>
-                </>
-              ) : (
-                <>
-                  {/* Frames Section for Image to Video */}
-                  <div className="bg-[#111111] rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="text-emerald-400">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M12 2L2 7L12 12L22 7L12 2Z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M2 17L12 22L22 17"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M2 12L12 17L22 12"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                      <span className="text-emerald-400 font-medium">Frames</span>
-                  </div>
-
-                    <p className="text-xs text-gray-400 mb-3">
-                      Supports 1:1 png/jpg images, 10MB max file size, 300px min dimension. Upload at least 2 images to
-                      get the desired result.
-                    </p>
-
-                    {/* Upload Grid */}
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      <div className="bg-[#0A0A0A] rounded-md p-2 flex items-center justify-center h-[75px]">
-                        <p className="text-xs text-gray-500">Upload an image</p>
+            {/* Left Sidebar - Now with fixed height and scrollable */}
+            <div className="w-full md:w-[350px] flex-shrink-0 h-[calc(100vh-150px)] overflow-hidden">
+              <div className="h-full relative overflow-y-auto px-4 space-y-4">
+                {mode === "text-to-video" ? (
+                  <>
+                    {/* Prompt Section - Fixed height */}
+                    <div className="bg-[#111111] rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="text-emerald-400">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M12 2L2 7L12 12L22 7L12 2Z"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M2 17L12 22L22 17"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M2 12L12 17L22 12"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </div>
+                        <span className="text-emerald-400 font-medium">Prompt</span>
                       </div>
-                      <div className="bg-[#0A0A0A] rounded-md p-2 flex items-center justify-center h-[75px]">
-                        <p className="text-xs text-gray-500">Upload an image</p>
-                      </div>
-                      <div className="bg-[#0A0A0A] rounded-md p-2 flex items-center justify-center h-[75px]">
-                        <p className="text-xs text-gray-500">Upload an image</p>
-                      </div>
-                      <div className="bg-[#0A0A0A] rounded-md p-2 flex items-center justify-center h-[75px]">
-                        <p className="text-xs text-gray-500">Upload an image</p>
-                      </div>
-                    </div>
-
-                    {/* Example Images */}
-                    <div>
-                      <p className="text-xs text-gray-400 mb-2">Examples:</p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        <Image
-                          src="https://s21-kling.klingai.com/bs2/upload-ylab-stunt-sgp/kling/prompt-library-resources/image-to-video_1.6_zh_examples_%E5%A5%B3%E5%AD%90%E5%BC%B9%E5%8A%A8%E4%B9%90%E5%99%A8_firstFrame_400.jpeg?x-kcdn-pid=112372&x-oss-process=image%2Fresize%2Cw_96%2Ch_96%2Cm_mfit"
-                          alt="Example 1"
-                          width={55}
-                          height={55}
-                          className="rounded-md"
-                        />
-                        <Image
-                          src="https://s21-kling.klingai.com/bs2/upload-ylab-stunt-sgp/kling/prompt-library-resources/image-to-video_1.6_en_examples_Mini_Panda_400.jpeg?x-kcdn-pid=112372&x-oss-process=image%2Fresize%2Cw_96%2Ch_96%2Cm_mfit"
-                          alt="Example 2"
-                          width={55}
-                          height={55}
-                          className="rounded-md"
-                        />
-                        <Image
-                          src="https://s21-kling.klingai.com/bs2/upload-ylab-stunt-sgp/kling/prompt-library-resources/image-to-video_1.6_en_examples_Icy_Island_400.jpeg?x-kcdn-pid=112372&x-oss-process=image%2Fresize%2Cw_96%2Ch_96%2Cm_mfit"
-                          alt="Example 3"
-                          width={55}
-                          height={55}
-                          className="rounded-md"
-                        />
-                        <Image
-                          src="https://s21-kling.klingai.com/bs2/upload-ylab-stunt-sgp/kling/prompt-library-resources/image-to-video_1.6_en_examples_Fuzzy_House_400.jpeg?x-kcdn-pid=112372&x-oss-process=image%2Fresize%2Cw_96%2Ch_96%2Cm_mfit"
-                          alt="Example 4"
-                          width={55}
-                          height={55}
-                          className="rounded-md"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Prompt Section for Image to Video */}
-                  <div className="bg-[#111111] rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-emerald-400">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M12 2L2 7L12 12L22 7L12 2Z"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M2 17L12 22L22 17"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M2 12L12 17L22 12"
-                            stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                      <span className="text-emerald-400 font-medium">Prompt</span>
-                  </div>
-
-                    <Textarea
-                      placeholder="On the stage, a girl wearing fashionable clothes and a crystal crown, calmly looking at the camera."
-                      className="bg-[#0A0A0A] border-none h-[110px] text-sm resize-none mb-0 mt-2"
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Settings Section - Common for both modes */}
-                <div className="bg-[#111111] rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="text-emerald-400">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M12 2L2 7L12 12L22 7L12 2Z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M2 17L12 22L22 17"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M2 12L12 17L22 12"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-emerald-400 font-medium">Settings</span>
-                  </div>
-
-                  <div className="mb-4">
-                    <Label className="text-xs text-gray-400 mb-2">Aspect Ratio</Label>
-                    <div className="flex gap-2">
-                      <button
-                        className={`w-8 h-8 flex items-center justify-center rounded border ${aspectRatio === "1:1" ? "border-emerald-400 bg-[#0A0A0A]" : "border-gray-700"}`}
-                        onClick={() => setAspectRatio("1:1")}
-                      >
-                        <div className="w-4 h-4 bg-gray-500 rounded-sm"></div>
-                      </button>
-                      <button
-                        className={`w-8 h-8 flex items-center justify-center rounded border ${aspectRatio === "16:9" ? "border-emerald-400 bg-[#0A0A0A]" : "border-gray-700"}`}
-                        onClick={() => setAspectRatio("16:9")}
-                      >
-                        <div className="w-5 h-3 bg-gray-500 rounded-sm"></div>
-                      </button>
-                      <button
-                        className={`w-8 h-8 flex items-center justify-center rounded border ${aspectRatio === "9:16" ? "border-emerald-400 bg-[#0A0A0A]" : "border-gray-700"}`}
-                        onClick={() => setAspectRatio("9:16")}
-                      >
-                        <div className="w-3 h-5 bg-gray-500 rounded-sm"></div>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <Label className="text-xs text-gray-400 mb-2">Generation Count</Label>
-                    <div className="px-1">
-                      <Slider
-                        value={[generationCount]}
-                        min={1}
-                        max={10}
-                        step={1}
-                        onValueChange={(value) => setGenerationCount(value[0])}
-                        className="my-4"
+                      <Textarea
+                        placeholder="Please describe your creative ideas for the video or view our sample prompts to get started!"
+                        className="bg-[#0A0A0A] border-none h-[100px] text-sm resize-none mb-4"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
                       />
-                      <div className="flex justify-between">
-                        <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-                        <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-                        <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-                        <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-                        <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-                        <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-                        <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                      
+                      {/* Negative Prompt */}
+                      <div className="flex items-center gap-2 mb-2 mt-3">
+                        <div className="text-red-400">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M12 2L2 7L12 12L22 7L12 2Z"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                            <path d="M15 9L9 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            <path d="M9 9L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          </svg>
+                        </div>
+                        <span className="text-red-400 text-sm font-medium">Negative Prompt</span>
+                      </div>
+                      <Textarea
+                        placeholder="Enter elements you want to avoid in your video (e.g., blurry, low quality, distorted faces, oversaturated colors)"
+                        className="bg-[#0A0A0A] border-none h-[80px] text-sm resize-none mb-2"
+                        value={negativePrompt}
+                        onChange={(e) => setNegativePrompt(e.target.value)}
+                      />
+                      
+                      {/* <div className="flex flex-wrap gap-1">
+                        <div className="py-1 text-xs text-gray-400">Hints:</div>
+                        <div className="px-1 py-1 bg-[#0A0A0A] text-xs text-gray-400">Double exposure</div>
+                        <div className="px-1 py-1 bg-[#0A0A0A] text-xs text-gray-400">Dramatic</div>
+                        <div className="px-1 py-1 bg-[#0A0A0A] text-xs text-gray-400">Narrative</div>
+                        <div className="px-1 py-1 bg-[#0A0A0A] text-xs text-gray-400">Aime</div>
+                      </div> */}
+                    </div>
+
+                    {/* Settings Section - Moved from Sheet */}
+                    <div className="bg-[#111111] rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="text-emerald-400">
+                          <Settings2 className="h-5 w-5" />
+                        </div>
+                        <span className="text-emerald-400 font-medium">Settings</span>
+                      </div>
+
+                      <div className="space-y-4">
+                        {/* Model Selection */}
+                        <div>
+                          <Label className="text-xs text-gray-400 mb-2">Model</Label>
+                          <Select
+                            value={options.model_name}
+                            onValueChange={(value) => {
+                              setOptions({ 
+                                ...options, 
+                                model_name: value,
+                                // Reset mode to standard if switching to Kling v1.6
+                                mode: value === 'kling-v1-6' ? 'std' : options.mode 
+                              })
+                            }}
+                          >
+                            <SelectTrigger className="bg-[#1a1a1a] border-gray-700">
+                              <SelectValue placeholder="Select model" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1a1a1a] border-gray-700">
+                              <SelectItem value="kling-v1">Kling v1</SelectItem>
+                              <SelectItem value="kling-v1-6">Kling v1.6</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Mode Selection - Only show for Kling v1 */}
+                        {options.model_name === 'kling-v1' && (
+                          <div>
+                            <Label className="text-xs text-gray-400 mb-2">Mode</Label>
+                            <Select
+                              value={options.mode}
+                              onValueChange={(value) =>
+                                setOptions({ ...options, mode: value })
+                              }
+                            >
+                              <SelectTrigger className="bg-[#1a1a1a] border-gray-700">
+                                <SelectValue placeholder="Select mode" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-[#1a1a1a] border-gray-700">
+                                <SelectItem value="std">Standard</SelectItem>
+                                <SelectItem value="pro">Professional</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {/* Aspect Ratio */}
+                        <div>
+                          <Label className="text-xs text-gray-400 mb-2">Aspect Ratio</Label>
+                          <div className="flex gap-2">
+                            <button
+                              className={`w-8 h-8 flex items-center justify-center rounded border ${aspectRatio === "1:1" ? "border-emerald-400 bg-[#0A0A0A]" : "border-gray-700"}`}
+                              onClick={() => setAspectRatio("1:1")}
+                            >
+                              <div className="w-4 h-4 bg-gray-500 rounded-sm"></div>
+                            </button>
+                            <button
+                              className={`w-8 h-8 flex items-center justify-center rounded border ${aspectRatio === "16:9" ? "border-emerald-400 bg-[#0A0A0A]" : "border-gray-700"}`}
+                              onClick={() => setAspectRatio("16:9")}
+                            >
+                              <div className="w-5 h-3 bg-gray-500 rounded-sm"></div>
+                            </button>
+                            <button
+                              className={`w-8 h-8 flex items-center justify-center rounded border ${aspectRatio === "9:16" ? "border-emerald-400 bg-[#0A0A0A]" : "border-gray-700"}`}
+                              onClick={() => setAspectRatio("9:16")}
+                            >
+                              <div className="w-3 h-5 bg-gray-500 rounded-sm"></div>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Duration */}
+                        <div>
+                          <Label className="text-xs text-gray-400 mb-2">Duration</Label>
+                          <Select
+                            value={options.duration}
+                            onValueChange={(value) =>
+                              setOptions({ ...options, duration: value })
+                            }
+                          >
+                            <SelectTrigger className="bg-[#1a1a1a] border-gray-700">
+                              <SelectValue placeholder="Select duration" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1a1a1a] border-gray-700">
+                              <SelectItem value="5">5 seconds</SelectItem>
+                              <SelectItem value="10">10 seconds</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Generation Quality Slider */}
+                        <div>
+                          <Label className="text-xs text-gray-400 mb-2">Guidance scale</Label>
+                          <Slider
+                            value={[options.guidance_scale]}
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            onValueChange={(value) => setOptions({ ...options, guidance_scale: value[0] })}
+                            className="my-4"
+                          />
+                          <p className="text-xs text-gray-400 text-center">
+                            Scale : {options.guidance_scale.toFixed(2)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Frames Section for Image to Video */}
+                    <div className="bg-[#111111] rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-emerald-400">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M12 2L2 7L12 12L22 7L12 2Z"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M2 17L12 22L22 17"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M2 12L12 17L22 12"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </div>
+                        <span className="text-emerald-400 font-medium">Frames</span>
+                      </div>
+
+                      <p className="text-xs text-gray-400 mb-3">
+                        Supports 1:1 png/jpg images, 10MB max file size, 300px min dimension. Upload at least 2 images to
+                        get the desired result.
+                      </p>
+
+                      {/* Upload Grid */}
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                        <div className="bg-[#0A0A0A] rounded-md p-2 flex items-center justify-center h-[75px]">
+                          <p className="text-xs text-gray-500">Upload an image</p>
+                        </div>
+                        <div className="bg-[#0A0A0A] rounded-md p-2 flex items-center justify-center h-[75px]">
+                          <p className="text-xs text-gray-500">Upload an image</p>
+                        </div>
+                        <div className="bg-[#0A0A0A] rounded-md p-2 flex items-center justify-center h-[75px]">
+                          <p className="text-xs text-gray-500">Upload an image</p>
+                        </div>
+                        <div className="bg-[#0A0A0A] rounded-md p-2 flex items-center justify-center h-[75px]">
+                          <p className="text-xs text-gray-500">Upload an image</p>
+                        </div>
+                      </div>
+
+                      {/* Example Images */}
+                      <div>
+                        <p className="text-xs text-gray-400 mb-2">Examples:</p>
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                          <Image
+                            src="https://s21-kling.klingai.com/bs2/upload-ylab-stunt-sgp/kling/prompt-library-resources/image-to-video_1.6_zh_examples_%E5%A5%B3%E5%AD%90%E5%BC%B9%E5%8A%A8%E4%B9%90%E5%99%A8_firstFrame_400.jpeg?x-kcdn-pid=112372&x-oss-process=image%2Fresize%2Cw_96%2Ch_96%2Cm_mfit"
+                            alt="Example 1"
+                            width={55}
+                            height={55}
+                            className="rounded-md"
+                          />
+                          <Image
+                            src="https://s21-kling.klingai.com/bs2/upload-ylab-stunt-sgp/kling/prompt-library-resources/image-to-video_1.6_en_examples_Mini_Panda_400.jpeg?x-kcdn-pid=112372&x-oss-process=image%2Fresize%2Cw_96%2Ch_96%2Cm_mfit"
+                            alt="Example 2"
+                            width={55}
+                            height={55}
+                            className="rounded-md"
+                          />
+                          <Image
+                            src="https://s21-kling.klingai.com/bs2/upload-ylab-stunt-sgp/kling/prompt-library-resources/image-to-video_1.6_en_examples_Icy_Island_400.jpeg?x-kcdn-pid=112372&x-oss-process=image%2Fresize%2Cw_96%2Ch_96%2Cm_mfit"
+                            alt="Example 3"
+                            width={55}
+                            height={55}
+                            className="rounded-md"
+                          />
+                          <Image
+                            src="https://s21-kling.klingai.com/bs2/upload-ylab-stunt-sgp/kling/prompt-library-resources/image-to-video_1.6_en_examples_Fuzzy_House_400.jpeg?x-kcdn-pid=112372&x-oss-process=image%2Fresize%2Cw_96%2Ch_96%2Cm_mfit"
+                            alt="Example 4"
+                            width={55}
+                            height={55}
+                            className="rounded-md"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Prompt Section for Image to Video */}
+                    <div className="bg-[#111111] rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-emerald-400">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M12 2L2 7L12 12L22 7L12 2Z"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M2 17L12 22L22 17"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M2 12L12 17L22 12"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </div>
+                        <span className="text-emerald-400 font-medium">Prompt</span>
+                      </div>
+
+                      <Textarea
+                        placeholder="On the stage, a girl wearing fashionable clothes and a crystal crown, calmly looking at the camera."
+                        className="bg-[#0A0A0A] border-none h-[110px] text-sm resize-none mb-0 mt-2"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
 
                 {/* Generate Button */}
-              <div className="flex gap-3">
+                <div className="flex gap-3 sticky bottom-0 w-full">
                   <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-6 rounded-lg"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium  rounded-lg"
                     onClick={handleGenerate}
                     disabled={isGenerating}
                   >
@@ -566,208 +636,110 @@ export default function VideoGeneratorPage() {
                       "Generate videos"
                     )}
                   </Button>
-                  
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button variant="outline" className="p-3 bg-[#1a1a1a] border-gray-700 hover:bg-[#252525]">
-                        <Settings2 className="h-5 w-5 text-gray-300" />
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent className="bg-[#2c2c2c] text-gray-300 border-gray-700">
-                      <SheetHeader>
-                        <SheetTitle className="text-white">Video Settings</SheetTitle>
-                        <SheetDescription className="text-gray-400">
-                          Configure video generation parameters
-                        </SheetDescription>
-                      </SheetHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label className="text-gray-300">Model</Label>
-                          <Select
-                            value={options.model_name}
-                            onValueChange={(value) =>
-                              setOptions({ ...options, model_name: value })
-                            }
-                          >
-                            <SelectTrigger className="bg-[#1a1a1a] border-gray-700 text-white">
-                              <SelectValue placeholder="Select model" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
-                              <SelectItem value="kling-v1">Kling v1</SelectItem>
-                              <SelectItem value="kling-v1-6">Kling v1.6</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-gray-300">Mode</Label>
-                          <Select
-                            value={options.mode}
-                            onValueChange={(value) =>
-                              setOptions({ ...options, mode: value })
-                            }
-                          >
-                            <SelectTrigger className="bg-[#1a1a1a] border-gray-700 text-white">
-                              <SelectValue placeholder="Select mode" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
-                              <SelectItem value="std">Standard</SelectItem>
-                              <SelectItem value="pro">Professional</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-gray-300">Aspect Ratio</Label>
-                          <Select
-                            value={options.aspect_ratio}
-                            onValueChange={(value) =>
-                              setOptions({ ...options, aspect_ratio: value })
-                            }
-                          >
-                            <SelectTrigger className="bg-[#1a1a1a] border-gray-700 text-white">
-                              <SelectValue placeholder="Select aspect ratio" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
-                              <SelectItem value="16:9">16:9</SelectItem>
-                              <SelectItem value="9:16">9:16</SelectItem>
-                              <SelectItem value="1:1">1:1</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-gray-300">Duration</Label>
-                          <Select
-                            value={options.duration}
-                            onValueChange={(value) =>
-                              setOptions({ ...options, duration: value })
-                            }
-                          >
-                            <SelectTrigger className="bg-[#1a1a1a] border-gray-700 text-white">
-                              <SelectValue placeholder="Select duration" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
-                              <SelectItem value="5">5 seconds</SelectItem>
-                              <SelectItem value="10">10 seconds</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-gray-300">Generation Quality</Label>
-                          <Slider
-                            value={[options.guidance_scale]}
-                            min={1}
-                            max={15}
-                            step={0.1}
-                            onValueChange={(value) => setOptions({ ...options, guidance_scale: value[0] })}
-                            className="my-4"
-                          />
-                          <p className="text-xs text-gray-400 text-center">Quality: {options.guidance_scale}</p>
-                        </div>
-                      </div>
-                    </SheetContent>
-                  </Sheet>
                 </div>
               </div>
+            </div>
 
             {/* Right Content - Example Cards or Preview */}
-            <div className="flex-1 overflow-auto h-full">
+            <div className="flex-1 overflow-auto h-[calc(100vh-100px)]">
               {mode === "text-to-video" ? (
                 <>
-                <h2 className="text-2xl text-center p-4 font-medium text-white">
-                  Looking for <span className="text-emerald-400">inspiration</span>? Some examples below
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
-                  {/* First Image */}
-                  <div className="relative rounded-2xl overflow-hidden group h-full">
-                    <div className="relative h-full">
-                      <Image
-                        src="/image.png"
-                        alt="Flower field with a windmill in the distance"
-                        className="h-[92.5%] w-full object-cover"
-                        width={330}
-                        height={400}
-                      />
-                      <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
-                        <p className="text-white text-lg font-light leading-tight max-w-[70%]">
-                          A flower field with a windmill in the distance...
-                        </p>
-                        <button
-                          className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
-                          onClick={() => handleUsePrompt("A flower field with a windmill in the distance...")}
-                        >
-                          Use Prompt
-                        </button>
+                  <h2 className="text-2xl text-center p-4 font-medium text-white">
+                    Looking for <span className="text-emerald-400">inspiration</span>? Some examples below
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
+                    {/* First Image */}
+                    <div className="relative rounded-2xl overflow-hidden group h-full">
+                      <div className="relative h-full">
+                        <Image
+                          src="/image.png"
+                          alt="Flower field with a windmill in the distance"
+                          className="h-[92.5%] w-full object-cover"
+                          width={330}
+                          height={400}
+                        />
+                        <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
+                          <p className="text-white text-lg font-light leading-tight max-w-[70%]">
+                            A flower field with a windmill in the distance...
+                          </p>
+                          <button
+                            className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                            onClick={() => handleUsePrompt("A flower field with a windmill in the distance...")}
+                          >
+                            Use Prompt
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Second Image */}
-                  <div className="relative rounded-2xl overflow-hidden group h-full">
-                    <div className="relative h-full">
-                      <Image
-                        src="/image1.png"
-                        alt="Fantasy castle sitting on top of a floating island"
-                        className="h-[92.5%] w-full object-cover"
-                        width={330}
-                        height={400}
-                      />
-                      <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
-                        <p className="text-white text-lg font-light leading-tight max-w-[70%]">
-                          A fantasy castle sitting on top of a floating island...
-                        </p>
-                        <button
-                          className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
-                          onClick={() => handleUsePrompt("A fantasy castle sitting on top of a floating island...")}
-                        >
-                          Use Prompt
-                        </button>
+                    {/* Second Image */}
+                    <div className="relative rounded-2xl overflow-hidden group h-full">
+                      <div className="relative h-full">
+                        <Image
+                          src="/image1.png"
+                          alt="Fantasy castle sitting on top of a floating island"
+                          className="h-[92.5%] w-full object-cover"
+                          width={330}
+                          height={400}
+                        />
+                        <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
+                          <p className="text-white text-lg font-light leading-tight max-w-[70%]">
+                            A fantasy castle sitting on top of a floating island...
+                          </p>
+                          <button
+                            className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                            onClick={() => handleUsePrompt("A fantasy castle sitting on top of a floating island...")}
+                          >
+                            Use Prompt
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Third Image */}
-                  <div className="relative rounded-2xl overflow-hidden group h-full">
-                    <div className="relative h-full">
-                      <Image
-                        src="/image2.png"
-                        alt="Cozy library full of books, with an open..."
-                        className="h-[92.5%] w-full object-cover"
-                        width={330}
-                        height={400}
-                      />
-                      <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
-                        <p className="text-white text-lg font-light leading-tight max-w-[70%]">
-                          A cozy library full of books, with an open...
-                        </p>
-                        <button
-                          className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
-                          onClick={() => handleUsePrompt("A cozy library full of books, with an open...")}
-                        >
-                          Use Prompt
-                        </button>
+                    {/* Third Image */}
+                    <div className="relative rounded-2xl overflow-hidden group h-full">
+                      <div className="relative h-full">
+                        <Image
+                          src="/image2.png"
+                          alt="Cozy library full of books, with an open..."
+                          className="h-[92.5%] w-full object-cover"
+                          width={330}
+                          height={400}
+                        />
+                        <div className="absolute bottom-[8%] left-0 right-0 p-4 flex items-end justify-between">
+                          <p className="text-white text-lg font-light leading-tight max-w-[70%]">
+                            A cozy library full of books, with an open...
+                          </p>
+                          <button
+                            className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                            onClick={() => handleUsePrompt("A cozy library full of books, with an open...")}
+                          >
+                            Use Prompt
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
                 </>
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center p-6 max-w-md bg-[#111111] rounded-lg">
-                        <div className="flex flex-col items-center">
-                          <img
-                            src="/vector.png"
-                            alt="Neuro Video Gen AI"
-                            className="w-24 h-24 md:w-32 md:h-32 mb-4"
-                          />
-                          <p className="text-gray-500 text-sm md:text-lg text-center">
-                            Release your creative potential. Experience the magic of Neuro Video Gen AI
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex flex-col items-center">
+                      <img
+                        src="/vector.png"
+                        alt="Neuro Video Gen AI"
+                        className="w-24 h-24 md:w-32 md:h-32 mb-4"
+                      />
+                      <p className="text-gray-500 text-sm md:text-lg text-center">
+                        Release your creative potential. Experience the magic of Neuro Video Gen AI
+                      </p>
                     </div>
-              )}
                   </div>
                 </div>
-              </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

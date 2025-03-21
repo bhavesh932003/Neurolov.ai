@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     const requestBody = {
       model_name: body.model_name || 'kling-v1',
       prompt: body.prompt,
-      negative_prompt: body.negative_prompt,
+      negative_prompt: body.negative_prompt || undefined,
       cfg_scale: body.cfg_scale !== undefined ? body.cfg_scale : 0.5,
       mode: body.mode || 'std',
       aspect_ratio: body.aspect_ratio || '16:9',
