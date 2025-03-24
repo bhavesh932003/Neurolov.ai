@@ -500,7 +500,7 @@ export default function VideoGeneratorPage() {
     <div className="fixed inset-0 w-full left-0 top-[8.5%] z-[40] mt-6 md:mt-0 overflow-hidden bg-[#2c2c2c]">
       <div className="h-screen text-gray-300 flex flex-col">
         {/* Header with Back Button and Mode Selector */}
-        <div className="px-6 md:px-12 lg:px-16 xl:px-20 py-4 flex justify-between items-center">
+        <div className="px-4 sm:px-6 md:px-12 lg:px-16 xl:px-20 py-4 flex justify-between items-center">
           <Link href="/ai-models" className="flex items-center gap-2 text-gray-400 hover:text-gray-300">
             <div className="w-8 h-8 flex items-center justify-center text-white rounded-full border border-dotted border-gray-700">
               <ArrowLeft className="w-4 h-4" />
@@ -523,10 +523,15 @@ export default function VideoGeneratorPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-hidden px-6 md:px-12 lg:px-16 xl:px-20">
+        <div className="flex-1 overflow-hidden px-4 sm:px-6 md:px-12 lg:px-16 xl:px-20">
           <div className="h-full flex flex-col md:flex-row gap-8 md:gap-12">
-            {/* Left Sidebar - Now with fixed height and scrollable */}
-            <div className="w-full md:w-[350px] flex-shrink-0 h-[calc(100vh-170px)] overflow-hidden">
+            {/* Left Sidebar - Conditionally rendered based on generation status */}
+            <div className={`${
+              (mode === "text-to-video" && textGenerationStatus !== "idle") || 
+              (mode === "image-to-video" && imageGenerationStatus !== "idle") 
+                ? "hidden md:block" 
+                : "block"
+            } w-full md:w-[350px] flex-shrink-0 h-[calc(100vh-170px)] overflow-hidden`}>
               <div className="h-full relative overflow-y-auto px-4 space-y-4">
                 {mode === "text-to-video" ? (
                   <>
@@ -1056,7 +1061,12 @@ export default function VideoGeneratorPage() {
             </div>
 
             {/* Right Content - Example Cards or Preview */}
-            <div className="flex-1 overflow-auto h-[calc(100vh-100px)]">
+            <div className={`flex-1 overflow-auto h-[calc(100vh-100px)] ${
+              (mode === "text-to-video" && textGenerationStatus !== "idle") || 
+              (mode === "image-to-video" && imageGenerationStatus !== "idle") 
+                ? "w-full" 
+                : ""
+            }`}>
               {mode === "text-to-video" ? (
                 <>
                   {textGenerationStatus === "idle" && (
@@ -1156,7 +1166,7 @@ export default function VideoGeneratorPage() {
                         </div>
                       </div>
 
-                      <div className="mt-8 text-center">
+                      <div className="mt-8 text-center px-4">
                         <h3 className="text-xl font-medium text-white mb-2">Your imagination is generating</h3>
                         <p className="text-gray-400">It takes approximately 5 to 10 minutes. Stay tuned!</p>
 
@@ -1170,7 +1180,7 @@ export default function VideoGeneratorPage() {
                   )}
 
                   {textGenerationStatus === "complete" && textGeneratedVideoUrl && (
-                    <div className="flex flex-col items-center justify-center h-full">
+                    <div className="flex flex-col items-center justify-center h-full px-4 sm:px-0">
                       <div className="w-full max-w-3xl">
                         <div className="relative w-full rounded-xl overflow-hidden bg-black shadow-xl">
                           <video
@@ -1185,18 +1195,18 @@ export default function VideoGeneratorPage() {
                         </div>
 
                         <div className="mt-6 bg-[#111111] rounded-lg p-4">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between">
-                            <div>
+                          <div className="flex flex-col md:flex-row md:items-start justify-between">
+                            <div className="flex-1">
                               <h3 className="text-lg font-medium text-white mb-1">Generated Video</h3>
                               <p className="text-sm text-gray-400 mb-2">
                                 {textInferenceTime && `Generated in ${textInferenceTime} seconds`}
                               </p>
-                              <div className="bg-[#0A0A0A] rounded p-3 mt-2 max-w-lg">
-                                <p className="text-sm text-gray-300">{textPrompt}</p>
+                              <div className="bg-[#0A0A0A] rounded p-3 mt-2 w-full max-h-[200px] overflow-y-auto">
+                                <p className="text-sm text-gray-300 break-words">{textPrompt}</p>
                               </div>
                             </div>
 
-                            <div className="mt-4 md:mt-0">
+                            <div className="mt-4 md:mt-0 md:ml-4 flex-shrink-0">
                               <button
                                 onClick={() => {
                                   // Create a temporary link element
@@ -1270,7 +1280,7 @@ export default function VideoGeneratorPage() {
                             </div>
                       </div>
 
-                      <div className="mt-8 text-center">
+                      <div className="mt-8 text-center px-4">
                         <h3 className="text-xl font-medium text-white mb-2">Your imagination is generating</h3>
                         <p className="text-gray-400">It takes approximately 5 to 10 minutes. Stay tuned!</p>
 
@@ -1284,7 +1294,7 @@ export default function VideoGeneratorPage() {
                   )}
 
                   {imageGenerationStatus === "complete" && imageGeneratedVideoUrl && (
-                    <div className="flex flex-col items-center justify-center h-full">
+                    <div className="flex flex-col items-center justify-center h-full px-4 sm:px-0">
                       <div className="w-full max-w-3xl">
                         <div className="relative w-full rounded-xl overflow-hidden bg-black shadow-xl">
                           <video
@@ -1299,20 +1309,20 @@ export default function VideoGeneratorPage() {
                         </div>
 
                         <div className="mt-6 bg-[#111111] rounded-lg p-4">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between">
-                            <div>
+                          <div className="flex flex-col md:flex-row md:items-start justify-between">
+                            <div className="flex-1">
                               <h3 className="text-lg font-medium text-white mb-1">Generated Video</h3>
                               <p className="text-sm text-gray-400 mb-2">
                                 {imageInferenceTime && `Generated in ${imageInferenceTime} seconds`}
                               </p>
                               {imagePrompt && (
-                                <div className="bg-[#0A0A0A] rounded p-3 mt-2 max-w-lg">
-                                  <p className="text-sm text-gray-300">{imagePrompt}</p>
+                                <div className="bg-[#0A0A0A] rounded p-3 mt-2 w-full max-h-[200px] overflow-y-auto">
+                                  <p className="text-sm text-gray-300 break-words">{imagePrompt}</p>
                                 </div>
                               )}
                             </div>
 
-                            <div className="mt-4 md:mt-0">
+                            <div className="mt-4 md:mt-0 md:ml-4 flex-shrink-0">
                               <button
                                 onClick={() => {
                                   // Create a temporary link element
@@ -1339,7 +1349,7 @@ export default function VideoGeneratorPage() {
                           </div>
                         </div>
 
-                        <div className="mt-4 text-center">
+                        <div className="mt-4 pb-8 text-center">
                           <Button
                             onClick={() => {
                               setImageGenerationStatus("idle");

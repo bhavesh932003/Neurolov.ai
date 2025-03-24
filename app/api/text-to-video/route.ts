@@ -27,7 +27,7 @@ function base64UrlEncode(str: string | Uint8Array): string {
   } else {
     bytes = str;
   }
-  
+
   const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join('');
   return btoa(binString)
     .replace(/\+/g, '-')
@@ -39,6 +39,9 @@ function base64UrlEncode(str: string | Uint8Array): string {
 async function generateKlingToken() {
   const accessKey = process.env.KLING_ACCESS_KEY;
   const secretKey = process.env.KLING_SECRET_KEY;
+
+  console.log('accessKey', accessKey);
+  console.log('secretKey', secretKey);
 
   if (!accessKey || !secretKey) {
     throw new Error('Kling AI credentials not configured');
@@ -60,7 +63,7 @@ async function generateKlingToken() {
   const encoder = new TextEncoder();
   const headerBase64 = base64UrlEncode(JSON.stringify(header));
   const payloadBase64 = base64UrlEncode(JSON.stringify(payload));
-  
+
   const dataToSign = `${headerBase64}.${payloadBase64}`;
   const key = await crypto.subtle.importKey(
     'raw',
@@ -69,7 +72,7 @@ async function generateKlingToken() {
     false,
     ['sign']
   );
-  
+
   const signature = await crypto.subtle.sign(
     'HMAC',
     key,
@@ -137,15 +140,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Map the response to match frontend expectations
-    const processingTime = responseData.data?.created_at ? 
+    const processingTime = responseData.data?.created_at ?
       `${Math.floor((Date.now() - responseData.data.created_at) / 1000)}s` : '0s';
 
     const videoUrl = responseData.data?.task_result?.videos?.[0]?.url || null;
-    
+
     // Add more detailed status messages based on processing time
     let statusMessage = '';
     const processingSecs = Math.floor((Date.now() - (responseData.data?.created_at || Date.now())) / 1000);
-    
+
     if (responseData.data?.task_status === 'processing') {
       if (processingSecs < 60) {
         statusMessage = 'Initializing video generation...';
@@ -217,15 +220,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Map the response to match frontend expectations
-    const processingTime = responseData.data?.created_at ? 
+    const processingTime = responseData.data?.created_at ?
       `${Math.floor((Date.now() - responseData.data.created_at) / 1000)}s` : '0s';
 
     const videoUrl = responseData.data?.task_result?.videos?.[0]?.url || null;
-    
+
     // Add more detailed status messages based on processing time
     let statusMessage = '';
     const processingSecs = Math.floor((Date.now() - (responseData.data?.created_at || Date.now())) / 1000);
-    
+
     if (responseData.data?.task_status === 'processing') {
       if (processingSecs < 60) {
         statusMessage = 'Initializing video generation...';
