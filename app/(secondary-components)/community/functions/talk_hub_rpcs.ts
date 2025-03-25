@@ -3,26 +3,7 @@ import { getSupabaseClient } from "@/app/auth/supabase";
 
 const supabase = getSupabaseClient();
 
-/**
- * Gets the like count for a specific content
- * @param contentId - UUID of the content
- * @param contentType - Type of content (e.g., 'blog', 'comment')
- * @returns Number of likes
- */
-export const getLikeCount = async (contentId: string, contentType: string): Promise<number> => {
-    try {
-        const { data, error } = await supabase.rpc('get_blogs_likes_count', {
-            b_content_id: contentId,
-            b_content_type: contentType
-        });
 
-        if (error) throw error;
-        return data || 0;
-    } catch (error) {
-        console.error('Error getting like count:', error);
-        return 0;
-    }
-};
 
 /**
  * Toggles a like for a specific content
@@ -210,5 +191,115 @@ export const createComment = async (
     } catch (error) {
         console.error('Error creating comment:', error);
         return null;
+    }
+};
+
+/**
+ * Edits an existing blog post
+ * @param blogId - UUID of the blog to edit
+ * @param userId - UUID of the user attempting to edit
+ * @param updates - Object containing the fields to update
+ * @returns JSON response with success/failure and updated blog data
+ */
+export const editBlog = async (
+    blogId: string,
+    userId: string,
+    updates: {
+        title?: string;
+        content?: string;
+        imageUrl?: string;
+        tags?: string;
+    }
+): Promise<any> => {
+    try {
+        const { data, error } = await supabase.rpc('edit_blog', {
+            b_blog_id: blogId,
+            b_user_id: userId,
+            b_new_title: updates.title || null,
+            b_new_content: updates.content || null,
+            b_new_image_url: updates.imageUrl || null,
+            b_new_tags: updates.tags || null
+        });
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error editing blog:', error);
+        throw error;
+    }
+};
+
+/**
+ * Deletes a blog post
+ * @param blogId - UUID of the blog to delete
+ * @param userId - UUID of the user attempting to delete
+ * @returns JSON response with success/failure and deleted blog data
+ */
+export const deleteBlog = async (
+    blogId: string,
+    userId: string
+): Promise<any> => {
+    try {
+        const { data, error } = await supabase.rpc('delete_blog', {
+            b_blog_id: blogId,
+            b_user_id: userId
+        });
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error deleting blog:', error);
+        throw error;
+    }
+};
+
+/**
+ * Edits an existing comment
+ * @param commentId - UUID of the comment to edit
+ * @param userId - UUID of the user attempting to edit
+ * @param content - New content for the comment
+ * @returns JSON response with success/failure and updated comment data
+ */
+export const editComment = async (
+    commentId: string,
+    userId: string,
+    content: string
+): Promise<any> => {
+    try {
+        const { data, error } = await supabase.rpc('edit_blog_comment', {
+            b_comment_id: commentId,
+            b_user_id: userId,
+            b_new_content: content
+        });
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error editing comment:', error);
+        throw error;
+    }
+};
+
+/**
+ * Deletes a comment and its replies
+ * @param commentId - UUID of the comment to delete
+ * @param userId - UUID of the user attempting to delete
+ * @returns JSON response with success/failure and deleted comment data
+ */
+export const deleteCommentRecursive = async (
+    commentId: string,
+    userId: string
+): Promise<any> => {
+    try {
+        const { data, error } = await supabase.rpc('delete_blog_comment', {
+            b_comment_id: commentId,
+            b_user_id: userId
+        });
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error deleting comment:', error);
+        throw error;
     }
 };

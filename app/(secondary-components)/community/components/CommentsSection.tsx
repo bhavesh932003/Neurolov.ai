@@ -12,8 +12,8 @@ interface CommentsSectionProps {
   isOpen: boolean;
 }
 
-const CommentsSection: React.FC<CommentsSectionProps> = ({ 
-  blogId, 
+const CommentsSection: React.FC<CommentsSectionProps> = ({
+  blogId,
   userId,
   isOpen
 }) => {
@@ -24,7 +24,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const loadComments = async () => {
       setIsLoading(true);
       try {
@@ -42,7 +42,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
   const handleCommentSubmit = async () => {
     if (!newComment.trim() || !userId) return;
-    
+
     try {
       const commentId = await createComment(userId, blogId, newComment);
       if (commentId) {
@@ -58,7 +58,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   if (!isOpen) return null;
 
   return (
-    <motion.div 
+    <motion.div
       className="comments-section p-3 bg-black/50 border-t border-blue-500/20 mt-1 rounded-b-md"
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
@@ -69,7 +69,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         <MessageSquare className="w-4 h-4 text-blue-400" />
         Comments
       </h3>
-      
+
       {/* New comment form - more compact */}
       <div className="mb-4">
         <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
             onChange={(e) => setNewComment(e.target.value)}
             className="min-h-[50px] bg-gray-900/50 border border-blue-500/20 focus:border-blue-500/50 text-white text-sm resize-none py-2"
           />
-          <Button 
+          <Button
             onClick={handleCommentSubmit}
             disabled={!newComment.trim() || !userId}
             className="h-10 w-10 p-0 bg-blue-500 hover:bg-blue-600 rounded-full"
@@ -88,7 +88,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
           </Button>
         </div>
       </div>
-      
+
       {/* Comments list */}
       {isLoading ? (
         <div className="flex justify-center py-4">
@@ -97,9 +97,9 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
       ) : comments.length > 0 ? (
         <div className="space-y-2">
           {comments.map(comment => (
-            <Comment 
-              key={comment.id} 
-              comment={comment} 
+            <Comment
+              key={comment.id}
+              comment={comment}
               blogId={blogId}
               currentUserId={userId}
               onNewComment={() => setRefreshTrigger(prev => prev + 1)}
