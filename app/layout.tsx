@@ -32,7 +32,7 @@ const navigation = [
   { name: 'Earnings', href: '#', icon: Coins, isLocked: true, disabled: true },
   { name: 'Connect to Earn', href: '#', icon: Network, isLocked: true, disabled: true },
   { name: 'Wallet', href: '#', icon: Wallet, isLocked: true, disabled: true },
-  { name: 'Community', href: '#', icon: Users, isLocked: true, disabled: true },
+  { name: 'Community', href: '#', icon: Users },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'More info', href: '/more-info', icon: Info },
 ];
