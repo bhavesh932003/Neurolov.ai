@@ -30,6 +30,12 @@ export default function MusicAIPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Handler when the audio element encounters an error
+  const handleAudioError = () => {
+    toast.error('Audio playback error: The audio file is not available or unsupported.');
+    setIsPlaying(false);
+  };
+
   const pollForResults = async (fetchUrl: string) => {
     try {
       const response = await fetch(fetchUrl, {
@@ -37,7 +43,7 @@ export default function MusicAIPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({}) // The API key is handled by the backend
+        body: JSON.stringify({})
       });
 
       if (!response.ok) {
@@ -124,7 +130,6 @@ export default function MusicAIPage() {
         throw new Error(data.error || data.details?.message || data.message || 'Failed to generate music');
       }
 
-      // Handle immediate success
       if (data.audio && data.audio.length > 0) {
         setGeneratedAudio(data.audio[0]);
         setInferenceTime(data.generationTime);
@@ -133,9 +138,7 @@ export default function MusicAIPage() {
         return;
       }
 
-      // Start polling if needed
       if (data.status === 'processing' && data.fetch_result) {
-        // Start polling
         const poll = async () => {
           if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
             setIsGenerating(false);
@@ -151,7 +154,6 @@ export default function MusicAIPage() {
               setPollingAttempts(0);
             } else {
               setPollingAttempts(prev => prev + 1);
-              // Continue polling after 2 seconds
               const timeout = setTimeout(poll, 2000);
               setPollingTimeout(timeout);
             }
@@ -187,7 +189,6 @@ export default function MusicAIPage() {
       return;
     }
 
-    // Convert to base64
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = e.target?.result as string;
@@ -199,11 +200,17 @@ export default function MusicAIPage() {
 
   const togglePlay = () => {
     if (!audioRef.current) return;
-
+    if (audioRef.current.error) {
+      toast.error('Audio source is invalid.');
+      return;
+    }
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch(err => {
+        console.error('Playback error:', err);
+        toast.error('Failed to play audio.');
+      });
     }
     setIsPlaying(!isPlaying);
   };
@@ -213,6 +220,7 @@ export default function MusicAIPage() {
 
     try {
       const response = await fetch(generatedAudio);
+      if (!response.ok) throw new Error('Audio file not found.');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -337,7 +345,12 @@ export default function MusicAIPage() {
 
           {generatedAudio && (
             <div className="mt-4 space-y-2">
-              <audio ref={audioRef} src={generatedAudio} onEnded={() => setIsPlaying(false)} />
+              <audio 
+                ref={audioRef} 
+                src={generatedAudio} 
+                onEnded={() => setIsPlaying(false)}
+                onError={handleAudioError}
+              />
               <div className="flex items-center gap-2">
                 <Button onClick={togglePlay} variant="outline" size="icon">
                   {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
