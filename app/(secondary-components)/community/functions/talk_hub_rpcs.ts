@@ -52,10 +52,11 @@ export const toggleLike = async (userId: string, contentId: string, contentType:
  * @param blogId - UUID of the blog
  * @returns Array of comments with nested structure
  */
-export const fetchComments = async (blogId: string) => {
+export const fetchComments = async (blogId: string, userId?: string) => {
     try {
         const { data, error } = await supabase.rpc('get_blogs_comments', {
-            b_blog_id: blogId
+            b_blog_id: blogId,
+            b_user_id: userId || null
         });
 
         if (error) throw error;
@@ -67,7 +68,6 @@ export const fetchComments = async (blogId: string) => {
         return [];
     }
 };
-
 /**
  * Helper function to build a nested comment tree from flat data
  * @param comments - Flat array of comments
@@ -101,16 +101,24 @@ const buildCommentTree = (comments: any[]) => {
  * @param lastSeen - Timestamp indicating when the user last checked
  * @returns Array of latest blog posts with like count, comment count, and like status
  */
-export const fetchLatestBlogs = async (userId: string, lastSeen: string | Date) => {
+export const fetchLatestBlogs = async (userId: string, lastSeen: string | null = null) => {
     try {
-        const timestamp = typeof lastSeen === 'string' ? lastSeen : lastSeen.toISOString();
+
+
+
+        console.log('Fetching latest blogs with timestamp:', lastSeen);
 
         const { data, error } = await supabase.rpc('get_latest_blogs', {
-            b_latest_timestamp: timestamp,
+            b_latest_timestamp: lastSeen,
             b_user_id: userId
         });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase RPC error:', error);
+            throw error;
+        }
+
+        console.log('Latest blogs found:', data?.length || 0);
         return data || [];
     } catch (error) {
         console.error('Error fetching latest blogs:', error);
@@ -175,3 +183,32 @@ export const createBlog = async (
 };
 
 
+/**
+ * Creates a new comment on a blog post or as a reply to an existing comment
+ * @param userId - UUID of the user creating the comment
+ * @param blogId - UUID of the blog post
+ * @param content - Comment text content
+ * @param parentId - Optional UUID of the parent comment if this is a reply
+ * @returns Newly created comment ID or null if creation fails
+ */
+export const createComment = async (
+    userId: string,
+    blogId: string,
+    content: string,
+    parentId?: string | null
+): Promise<string | null> => {
+    try {
+        const { data, error } = await supabase.rpc('create_blog_comment', {
+            p_blog_id: blogId,
+            p_user_id: userId,
+            p_content: content,
+            p_parent_id: parentId || null
+        });
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error creating comment:', error);
+        return null;
+    }
+};
