@@ -1,9 +1,22 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Upload, Loader2, Download, Settings2, RefreshCw, Image as ImageIcon, Video } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import {
+  Upload,
+  Loader2,
+  Download,
+  Image as ImageIcon,
+  Video
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
@@ -28,7 +41,14 @@ interface FileUploadProps {
   disabled?: boolean;
 }
 
-const FileUploadInput = ({ accept, onChange, label, placeholder, value, disabled }: FileUploadProps) => {
+const FileUploadInput = ({
+  accept,
+  onChange,
+  label,
+  placeholder,
+  value,
+  disabled
+}: FileUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,8 +115,46 @@ export default function DeepfakeGeneratorPage() {
   const [options, setOptions] = useState<GenerationOptions>(defaultOptions);
   const [activeTab, setActiveTab] = useState('single_face');
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [loadingToastId, setLoadingToastId] = useState<string>();
+  const [countdown, setCountdown] = useState<number>(60);
+  const [loadingToastId, setLoadingToastId] = useState<string>('');
+
+  // Countdown effect – resets to 60 if it reaches 0 and output is still pending
+  useEffect(() => {
+    if (!isGenerating) return;
+    if (countdown <= 0) {
+      setCountdown(60);
+    }
+    const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, isGenerating]);
+
+  // Polling function: calls the provided fetchUrl every 5 sec until output is ready.
+  const pollDeepfake = async (fetchUrl: string, apiKey: string): Promise<any> => {
+    while (true) {
+      try {
+        const pollRes = await fetch(fetchUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: apiKey })
+        });
+        if (!pollRes.ok) {
+          throw new Error(`Polling HTTP error: ${pollRes.status}`);
+        }
+        const pollData = await pollRes.json();
+        console.log('Polling response:', pollData);
+        if (pollData.status === 'success' && pollData.output && pollData.output.length > 0) {
+          return pollData;
+        } else if (pollData.status === 'failed' || pollData.status === 'error') {
+          throw new Error(pollData.message || 'Processing failed during polling');
+        }
+        // Wait 5 seconds before next poll
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      } catch (err) {
+        console.error('Error during polling, retrying in 5 seconds...', err);
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+    }
+  };
 
   const handleGenerate = async () => {
     // Validate inputs based on operation type
@@ -120,11 +178,12 @@ export default function DeepfakeGeneratorPage() {
     setIsGenerating(true);
     setError(null);
     setGeneratedOutput(null);
-    setCountdown(60); // Start 60 second countdown
-    
-    // Clear any existing toasts
+    setCountdown(60);
+
+    // Dismiss any existing toast and show a new loading toast with countdown
     if (loadingToastId) toast.dismiss(loadingToastId);
-    setLoadingToastId(toast.loading('Processing... 60 seconds remaining'));
+    const newToastId = toast.loading(`Processing... ${60} s remaining`);
+    setLoadingToastId(newToastId);
 
     try {
       // Map tab names to API operations
@@ -137,7 +196,7 @@ export default function DeepfakeGeneratorPage() {
 
       const operation = operationMap[activeTab as keyof typeof operationMap];
 
-      // Prepare request body based on operation
+      // Prepare request body based on operation type
       const requestBody: any = {
         operation,
         ...options
@@ -159,10 +218,8 @@ export default function DeepfakeGeneratorPage() {
 
       const response = await fetch('/api/deepfake', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
       });
 
       const data = await response.json();
@@ -171,76 +228,33 @@ export default function DeepfakeGeneratorPage() {
         throw new Error(data.error || 'Failed to process request');
       }
 
+      // If API returns processing status with a fetchUrl, start polling.
       if (data.status === 'processing' && data.fetchUrl) {
-        // Start polling the fetch URL
-        let attempts = 0;
-        const maxAttempts = 30;
-        const pollInterval = 2000; // 2 seconds
-
-        const pollResult = async () => {
-          if (attempts >= maxAttempts) {
-            setCountdown(null);
-            toast.dismiss(loadingToastId);
-            throw new Error('Timeout waiting for processing');
-          }
-
-          try {
-            const pollResponse = await fetch(data.fetchUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            });
-            const pollData = await pollResponse.json();
-
-            if (pollData.status === 'success' && pollData.output && pollData.output.length > 0) {
-              setCountdown(null);
-              toast.dismiss(loadingToastId);
-              setGeneratedOutput(pollData.output[0]);
-              setInferenceTime(pollData.generationTime);
-              toast.success('Processing completed successfully!');
-              setIsGenerating(false);
-              return;
-            }
-
-            if (pollData.status === 'failed' || pollData.status === 'error') {
-              setCountdown(null);
-              toast.dismiss(loadingToastId);
-              throw new Error(pollData.message || 'Processing failed');
-            }
-
-            // Still processing, try again after delay
-            attempts++;
-            setTimeout(pollResult, pollInterval);
-          } catch (err: unknown) {
-            console.error('Polling error:', err);
-            setCountdown(null);
-            toast.dismiss(loadingToastId);
-            setError(err instanceof Error ? err.message : 'Unknown error occurred');
-            toast.error(err instanceof Error ? err.message : 'Unknown error occurred');
-            setIsGenerating(false);
-          }
-        };
-
-        // Start polling
-        setTimeout(pollResult, pollInterval);
+        toast.success('Processing started, please wait...');
+        const apiKey = process.env.NEXT_PUBLIC_MODELSLAB_API_KEY || '';
+        const pollData = await pollDeepfake(data.fetchUrl, apiKey);
+        // As soon as polling returns success, dismiss the loading toast and update output.
+        toast.dismiss(newToastId);
+        setGeneratedOutput(pollData.output[0]);
+        setInferenceTime(pollData.generationTime);
+        toast.success('Processing completed successfully!');
       } else if (data.status === 'success' && data.output) {
-        setCountdown(null);
-        toast.dismiss(loadingToastId);
+        // Immediate success – dismiss toast and update output.
+        toast.dismiss(newToastId);
         setGeneratedOutput(data.output);
         setInferenceTime(data.generationTime);
         toast.success('Processing completed successfully!');
-        setIsGenerating(false);
       } else {
-        throw new Error('Invalid response from server');
+        throw new Error('Invalid response format from ModelsLab API');
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Processing error:', err);
-      setCountdown(null);
-      toast.dismiss(loadingToastId);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      toast.error(err instanceof Error ? err.message : 'Unknown error occurred');
+      setError(err.message || 'Unknown error occurred');
+      toast.error(err.message || 'Unknown error occurred');
+    } finally {
       setIsGenerating(false);
+      // Dismiss the loading toast if it's still visible.
+      toast.dismiss(newToastId);
     }
   };
 
@@ -363,17 +377,20 @@ export default function DeepfakeGeneratorPage() {
           <div className="flex items-center space-x-2">
             <Switch
               checked={options.watermark}
-              onCheckedChange={(checked) => setOptions(prev => ({ ...prev, watermark: checked }))}
+              onCheckedChange={(checked) =>
+                setOptions((prev) => ({ ...prev, watermark: checked }))
+              }
               disabled={isGenerating}
             />
             <Label>Add Watermark</Label>
           </div>
 
           {generatedOutput && (
-            <div className="space-y-2">
-              <Label>Generated Output</Label>
-              <div className="border rounded-lg p-4 bg-muted/50">
-                <div className="aspect-video mb-4 flex items-center justify-center">
+            <div className="space-y-4">
+              <Label className="font-semibold">Generated Output</Label>
+              <div className="border rounded-lg p-4">
+                {/* Container without black or muted background */}
+                <div className="w-full h-[600px] flex items-center justify-center overflow-hidden rounded-lg">
                   {activeTab.includes('video') ? (
                     <video
                       ref={videoRef}
@@ -383,29 +400,25 @@ export default function DeepfakeGeneratorPage() {
                       autoPlay
                       muted
                       playsInline
-                      className="max-w-full max-h-[600px] rounded-lg"
-                      style={{ objectFit: 'contain' }}
+                      className="w-full h-full object-contain"
                     />
                   ) : (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <img
-                        src={generatedOutput}
-                        alt="Generated output"
-                        className="max-w-full max-h-[600px] rounded-lg"
-                        style={{ objectFit: 'contain' }}
-                        onError={(e) => {
-                          const img = e.target as HTMLImageElement;
-                          img.onerror = null;
-                          setError('Failed to load the generated output. You can still download it using the button below.');
-                        }}
-                      />
-                    </div>
+                    <img
+                      src={generatedOutput}
+                      alt="Generated output"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        img.onerror = null;
+                        setError(
+                          'Failed to load the generated output. Please try downloading it.'
+                        );
+                      }}
+                    />
                   )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm truncate flex-1 mr-4">
-                    {generatedOutput}
-                  </div>
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm truncate flex-1 mr-4">{generatedOutput}</div>
                   <Button
                     variant="outline"
                     size="sm"
@@ -423,18 +436,16 @@ export default function DeepfakeGeneratorPage() {
               </div>
             </div>
           )}
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2">
-          <Button 
-            onClick={handleGenerate} 
-            disabled={isGenerating}
-            className="w-full"
-          >
+          <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
+                Processing{countdown !== null && `... ${countdown} s`}
               </>
             ) : (
               <>
@@ -447,7 +458,6 @@ export default function DeepfakeGeneratorPage() {
               </>
             )}
           </Button>
-          {error && <p className="text-sm text-destructive">{error}</p>}
         </CardFooter>
       </Card>
     </div>

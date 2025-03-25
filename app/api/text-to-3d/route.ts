@@ -104,13 +104,16 @@ export async function POST(request: NextRequest) {
       const initialData = await modelLabsResponse.json();
       console.log('ModelsLab Response:', initialData);
 
-      // If processing, poll the fetch_result URL
+      // If processing, poll the fetch_result URL and append the API key to it
       if (initialData.status === 'processing' && initialData.fetch_result) {
-        // Return immediately with processing status and details
+        // Append the API key as a query parameter
+        const fetchUrlWithKey = `${initialData.fetch_result}?key=${modelslabApiKey}`;
+        // Increase ETA (doubling the provided ETA or defaulting to 60 seconds)
+        const updatedEta = initialData.eta ? initialData.eta * 2 : 60;
         return NextResponse.json({
           status: 'processing',
-          fetchUrl: initialData.fetch_result,
-          eta: initialData.eta || 30,
+          fetchUrl: fetchUrlWithKey,
+          eta: updatedEta,
           id: initialData.id,
           meta: initialData.meta,
           futureLinks: initialData.future_links || []

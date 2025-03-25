@@ -41,7 +41,6 @@ import {
 import { Label } from '@/components/ui/label';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import AIModelDropdown from './components/ai-dropdown';
 
 // Import ModelViewer dynamically to avoid SSR issues
 const ModelViewer = dynamic(() => import('../components/model-viewer'), { ssr: false });
@@ -70,7 +69,7 @@ class ModelErrorBoundary extends React.Component<{ onError: (msg: string) => voi
         <div className="h-full w-full flex items-center justify-center bg-[#2c2c2c] text-white/50">
           <div className="text-center p-4">
             <p>Failed to load 3D model</p>
-            <p className="text-sm mt-2">Please try generating again</p>
+            <p className="text-sm mt-2">Please wait while we retry...</p>
           </div>
         </div>
       );
@@ -123,17 +122,25 @@ export default function TextTo3DPage() {
   const [inferenceTime, setInferenceTime] = useState<number | null>(null);
   const [options, setOptions] = useState<GenerationOptions>(defaultOptions);
   
-  // Initialize the ref with null
   const containerRef = useRef<HTMLDivElement>(null);
   const errorBoundaryRef = useRef<ModelErrorBoundary>(null);
 
   useEffect(() => {
-    // Use optional chaining to ensure containerRef.current exists
     containerRef.current?.scrollTo({
       top: containerRef.current.scrollHeight,
       behavior: 'smooth',
     });
   }, []);
+
+  // Helper function: Checks if the provided model URL is available via a HEAD request.
+  const checkModelAvailability = async (url: string): Promise<boolean> => {
+    try {
+      const headResponse = await fetch(url, { method: 'HEAD' });
+      return headResponse.ok;
+    } catch (err) {
+      return false;
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -141,7 +148,6 @@ export default function TextTo3DPage() {
       return;
     }
 
-    // Reset the error boundary if it exists
     if (errorBoundaryRef.current) {
       errorBoundaryRef.current.setState({ hasError: false, error: null });
     }
@@ -169,17 +175,11 @@ export default function TextTo3DPage() {
         throw new Error(data.error || 'Failed to generate 3D model');
       }
 
+      // Polling if status is processing and a fetchUrl is provided
       if (data.status === 'processing' && data.fetchUrl) {
-        let attempts = 0;
-        const maxAttempts = 30;
-        const pollInterval = 2000; // 2 seconds
         let loadingToastId: string | undefined;
 
         const pollResult = async () => {
-          if (attempts >= maxAttempts) {
-            toast.dismiss(loadingToastId);
-            throw new Error('Timeout waiting for 3D model generation');
-          }
           try {
             const pollResponse = await fetch(data.fetchUrl, {
               method: 'POST',
@@ -190,12 +190,16 @@ export default function TextTo3DPage() {
             const pollData = await pollResponse.json();
 
             if (pollData.status === 'success' && pollData.output && pollData.output.length > 0) {
-              toast.dismiss(loadingToastId);
-              setGeneratedModelUrl(pollData.output[0]);
-              setInferenceTime(pollData.generationTime);
-              toast.success('3D model generated successfully!');
-              setIsGenerating(false);
-              return;
+              const modelUrl = pollData.output[0];
+              const isAvailable = await checkModelAvailability(modelUrl);
+              if (isAvailable) {
+                toast.dismiss(loadingToastId);
+                setGeneratedModelUrl(modelUrl);
+                setInferenceTime(pollData.generationTime);
+                toast.success('3D model generated successfully!');
+                setIsGenerating(false);
+                return;
+              }
             }
 
             if (pollData.status === 'failed' || pollData.status === 'error') {
@@ -203,29 +207,30 @@ export default function TextTo3DPage() {
               throw new Error(pollData.message || 'Generation failed');
             }
 
-            attempts++;
-            setTimeout(pollResult, pollInterval);
+            // Continue polling every 5 seconds indefinitely
+            setTimeout(pollResult, 5000);
           } catch (err: any) {
             console.error('Polling error:', err);
-            toast.dismiss(loadingToastId);
-            setError(err instanceof Error ? err.message : 'Unknown error occurred');
-            toast.error(err instanceof Error ? err.message : 'Unknown error occurred');
-            setIsGenerating(false);
+            // Continue polling every 5 seconds even if an error occurs
+            setTimeout(pollResult, 5000);
           }
         };
 
         loadingToastId = toast.loading(`Generating 3D model... ETA: ${data.eta || 30} seconds`);
-
-        // Optionally use future links if provided
-        if (data.futureLinks && data.futureLinks.length > 0) {
-          setGeneratedModelUrl(data.futureLinks[0]);
+        setTimeout(pollResult, 5000);
+      } 
+      // In case the backend returns immediate success
+      else if (data.status === 'success' && data.modelUrl) {
+        const isAvailable = await checkModelAvailability(data.modelUrl);
+        if (isAvailable) {
+          setGeneratedModelUrl(data.modelUrl);
+          setInferenceTime(data.generationTime);
+          toast.success('3D model generated successfully!');
+          setIsGenerating(false);
+        } else {
+          // Start infinite polling if the URL isn't yet available.
+          setTimeout(handleGenerate, 5000);
         }
-        setTimeout(pollResult, pollInterval);
-      } else if (data.status === 'success' && data.modelUrl) {
-        setGeneratedModelUrl(data.modelUrl);
-        setInferenceTime(data.generationTime);
-        toast.success('3D model generated successfully!');
-        setIsGenerating(false);
       } else {
         throw new Error('Invalid response from server');
       }
@@ -243,12 +248,12 @@ export default function TextTo3DPage() {
   };
 
   return (
-    <div ref={containerRef} className="h-screen w-screen fixed top-[8.5%] left-0 transition-colors duration-300 bg-[#1c1c1c] overflow-auto pb-52 lg:pb-32 md:pb-44" >
+    <div ref={containerRef} className="h-screen w-screen fixed top-[8.5%] left-0 transition-colors duration-300 bg-[#1c1c1c] overflow-auto pb-52 lg:pb-32 md:pb-44">
       <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 lg:mt-2 md:mt-3 sticky top-0 z-50 bg-[#1c1c1c] mt-8 gap-4">
         <Link href="/ai-models" className="flex items-center self-start gap-2 text-gray-400 hover:text-white transition-all mb-2 md:mb-0">
           <div className="rounded-full border border-white/20 p-1">
             <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
-          </div>  
+          </div>
           <span className="text-sm md:text-base">All AI Models</span>
         </Link>
       </div>
@@ -286,10 +291,7 @@ export default function TextTo3DPage() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-white">Output Format</Label>
-                      <Select
-                        value={options.output_format}
-                        onValueChange={(value) => setOptions(prev => ({ ...prev, output_format: value }))}
-                      >
+                      <Select value={options.output_format} onValueChange={(value) => setOptions(prev => ({ ...prev, output_format: value }))}>
                         <SelectTrigger className="bg-[#2c2c2c] border-white/10 text-white">
                           <SelectValue placeholder="Select format" />
                         </SelectTrigger>
@@ -323,17 +325,11 @@ export default function TextTo3DPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <Label className="text-white">Remove Background</Label>
-                      <Switch
-                        checked={options.remove_bg}
-                        onCheckedChange={(checked) => setOptions(prev => ({ ...prev, remove_bg: checked }))}
-                      />
+                      <Switch checked={options.remove_bg} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, remove_bg: checked }))} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label className="text-white">Generate NeRF Video</Label>
-                      <Switch
-                        checked={options.render}
-                        onCheckedChange={(checked) => setOptions(prev => ({ ...prev, render: checked }))}
-                      />
+                      <Switch checked={options.render} onCheckedChange={(checked) => setOptions(prev => ({ ...prev, render: checked }))} />
                     </div>
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center">
@@ -436,7 +432,7 @@ export default function TextTo3DPage() {
             </div>
             <div className="space-y-2">
               <Label className="text-white flex flex-row gap-2 justify-center w-fit mt-6 mb-2">
-                <PercentDiamond /> <span className='mt-1'>Prompt</span>
+                <PercentDiamond /> <span className="mt-1">Prompt</span>
               </Label>
               <Textarea
                 placeholder="Describe what you want to generate. For example, Cute owl, cartoon style, adult with fire wings."
@@ -447,14 +443,14 @@ export default function TextTo3DPage() {
               />
             </div>
             <div className="space-y-2">
-            <Label className='ml-2'>Negative Prompt (Optional)</Label>
-            <Input
-              placeholder="Elements to exclude from the generation..."
-              value={options.negative_prompt}
-              onChange={(e) => setOptions(prev => ({ ...prev, negative_prompt: e.target.value }))}
-              disabled={isGenerating}
-            />
-          </div>
+              <Label className="ml-2">Negative Prompt (Optional)</Label>
+              <Input
+                placeholder="Elements to exclude from the generation..."
+                value={options.negative_prompt}
+                onChange={(e) => setOptions(prev => ({ ...prev, negative_prompt: e.target.value }))}
+                disabled={isGenerating}
+              />
+            </div>
             {generatedModelUrl && (
               <div className="space-y-2 mt-4">
                 <div className="flex items-center justify-between mt-2">
