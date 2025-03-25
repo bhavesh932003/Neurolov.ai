@@ -3,8 +3,6 @@ import { getSupabaseClient } from "@/app/auth/supabase";
 
 const supabase = getSupabaseClient();
 
-
-
 /**
  * Toggles a like for a specific content
  * @param userId - UUID of the user

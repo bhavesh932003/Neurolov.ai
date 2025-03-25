@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState, useEffect } from 'react';
 import { fetchComments, createComment } from '../functions/talk_hub_rpcs';
 import Comment from './Comment';

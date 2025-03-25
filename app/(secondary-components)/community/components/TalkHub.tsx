@@ -19,7 +19,7 @@ import {
   Plus, Heart, MessageSquare, Share2, Tag, AtSign, Send,
   Sparkles, Image, X, Hash, RefreshCw, MoreVertical, Edit, Trash2
 } from 'lucide-react';
-import { createBlog, fetchBlogs, toggleLike, getLikeCount, fetchLatestBlogs, editBlog, deleteBlog } from '../functions/talk_hub_rpcs';
+import { createBlog, fetchBlogs, toggleLike, fetchLatestBlogs, editBlog, deleteBlog } from '../functions/talk_hub_rpcs';
 import { useUser } from '@/app/auth/useUser';
 import CommentsSection from './CommentsSection';
 import {
@@ -503,7 +503,7 @@ export const TalkHub: React.FC = () => {
           )}
 
           {/* Posts List */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false}>
             {posts.map((post, index) => (
               <motion.div
                 key={post.id}
@@ -516,9 +516,9 @@ export const TalkHub: React.FC = () => {
                   stiffness: 200,
                   damping: 20,
                   mass: 0.8,
-                  delay: index < 5 ? index * 0.05 : 0 // Only animate first 5 posts for better performance
+                  duration: 0.2  // Add a short duration for smoother exit
                 }}
-                viewport={{ once: true }}
+                layout  // Add layout prop to handle list reflow
                 className="block"
               >
                 <Card className="relative group overflow-hidden backdrop-blur-xl border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">

@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, MessageSquare, ChevronDown, ChevronUp, Send, MoreVertical, Edit, X, Trash2 } from 'lucide-react';
