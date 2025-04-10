@@ -62,7 +62,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Badge } from '@/components/ui/badge';
 import WelcomeModal from '@/components/modals/WelcomeModal';
 
-const DEV_EMAILS = ['nitishmeswal@gmail.com', 'neohex262@gmail.com', 'neurolov.ai@gmail.com', 'jprateek961@gmail.com', 'aitipamulaprapitesh02@gmail.com', 'fackidacc084@gmail.com', ];
+const DEV_EMAILS = ['nitishmeswal@gmail.com', 'neohex262@gmail.com', 'neurolov.ai@gmail.com', 'jprateek961@gmail.com', 'aitipamulaprapitesh02@gmail.com', 'fackidacc084@gmail.com','bhaveshshukla2003@gmail.com' ];
 
 interface DeployedContainer {
   id: string;
